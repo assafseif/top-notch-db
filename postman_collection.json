@@ -1,0 +1,147 @@
+{
+  "info": {
+    "name": "TopNotch Backend API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0",
+    "_postman_id": "topnotch-backend-collection"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get all products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get product by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","products","{{id}}"]
+            }
+          }
+        },
+        {
+          "name": "Create product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Running Shoes\",\n  \"price\": 79.99,\n  \"originalPrice\": 99.99,\n  \"categoryName\": \"Footwear\",\n  \"imagesBase64\": [\n    \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...\"\n  ],\n  \"description\": \"Comfortable running shoes\",\n  \"rating\": 4.5,\n  \"reviews\": 12,\n  \"sizes\": [\"8\",\"9\",\"10\"],\n  \"colors\": [\"Black\",\"White\"],\n  \"tags\": [\"New Arrival\"],\n  \"isNew\": true,\n  \"isLimited\": false,\n  \"isBestseller\": true\n}"
+            }
+            ,
+            "url": { "raw": "{{baseUrl}}/api/products", "host": ["{{baseUrl}}"], "path": ["api","products"] }
+          }
+        },
+        {
+          "name": "Update product",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Running Shoes\",\n  \"price\": 69.99,\n  \"categoryId\": 1\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/products/:id", "host": ["{{baseUrl}}"], "path": ["api","products","{{id}}"] }
+          }
+        },
+        {
+          "name": "Delete product",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/products/:id", "host": ["{{baseUrl}}"], "path": ["api","products","{{id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "Get all categories",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/categories", "host": ["{{baseUrl}}"], "path": ["api","categories"] }
+          }
+        },
+        {
+          "name": "Get category by id",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/categories/:id", "host": ["{{baseUrl}}"], "path": ["api","categories","{{id}}"] }
+          }
+        },
+        {
+          "name": "Create category",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Footwear\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/categories", "host": ["{{baseUrl}}"], "path": ["api","categories"] }
+          }
+        },
+        {
+          "name": "Update category",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Updated Category\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/categories/:id", "host": ["{{baseUrl}}"], "path": ["api","categories","{{id}}"] }
+          }
+        },
+        {
+          "name": "Delete category",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/categories/:id", "host": ["{{baseUrl}}"], "path": ["api","categories","{{id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ProductCategories (flattened)",
+      "item": [
+        {
+          "name": "Get all product categories",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/productscategories", "host": ["{{baseUrl}}"], "path": ["api","productscategories"] }
+          }
+        }
+      ]
+    }
+  ]
+}
+
