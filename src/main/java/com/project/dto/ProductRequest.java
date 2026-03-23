@@ -1,22 +1,28 @@
 package com.project.dto;
 
 import java.util.List;
+import lombok.*;
 
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
 public class ProductRequest {
-    public String name;
-    public Double price;
-    public Double originalPrice;
-    public String categoryName; // accept category by name for frontend convenience
-    public Long categoryId; // or by id
-    public Object category; // flexible: can be String (name) or object {id:.., name:..}
-    public List<String> imagesBase64;
-    public String description;
-    public Double rating;
-    public Integer reviews;
-    public List<String> sizes;
-    public List<String> colors;
-    public List<String> tags;
-    public Boolean isNew;
-    public Boolean isLimited;
-    public Boolean isBestseller;
+    private String name;
+    private Double price;
+    private Double originalPrice;
+    private String categoryName;
+    private Long categoryId;
+    private List<String> imagesBase64;
+    private String description;
+    private Double rating;
+    private Integer reviews;
+    private Integer quantity;
+    private List<String> sizes;
+    private List<String> colors;
+    private List<String> tags;
+    private Boolean isNew;
+    private Boolean isLimited;
+    private Boolean isBestseller;
 }

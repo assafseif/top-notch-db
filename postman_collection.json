@@ -1,14 +1,19 @@
 {
   "info": {
-    "name": "TopNotch Backend API",
+    "name": "TopNotch Backend API (updated)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "version": "1.0.0",
-    "_postman_id": "topnotch-backend-collection"
+    "version": "1.1.0",
+    "_postman_id": "topnotch-backend-collection-updated"
   },
   "variable": [
     {
       "key": "baseUrl",
       "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "id",
+      "value": "1",
       "type": "string"
     }
   ],
@@ -17,7 +22,7 @@
       "name": "Products",
       "item": [
         {
-          "name": "Get all products",
+          "name": "Get all products (flattened DTO)",
           "request": {
             "method": "GET",
             "header": [],
@@ -35,19 +40,32 @@
           "response": []
         },
         {
-          "name": "Get product by id",
+          "name": "Get product by id (with images)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/products/:id",
+              "raw": "{{baseUrl}}/api/products/{{id}}",
               "host": ["{{baseUrl}}"],
               "path": ["api","products","{{id}}"]
             }
           }
         },
         {
-          "name": "Create product",
+          "name": "Get products by category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/category/{{id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","products","category","{{id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create product (with images, tags, sizes, colors)",
           "request": {
             "method": "POST",
             "header": [
@@ -58,22 +76,30 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Running Shoes\",\n  \"price\": 79.99,\n  \"originalPrice\": 99.99,\n  \"categoryName\": \"Footwear\",\n  \"imagesBase64\": [\n    \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...\"\n  ],\n  \"description\": \"Comfortable running shoes\",\n  \"rating\": 4.5,\n  \"reviews\": 12,\n  \"sizes\": [\"8\",\"9\",\"10\"],\n  \"colors\": [\"Black\",\"White\"],\n  \"tags\": [\"New Arrival\"],\n  \"isNew\": true,\n  \"isLimited\": false,\n  \"isBestseller\": true\n}"
-            }
-            ,
+              "raw": "{\n  \"name\": \"Running Shoes\",\n  \"price\": 79.99,\n  \"originalPrice\": 99.99,\n  \"categoryName\": \"Footwear\",\n  \"imagesBase64\": [\n    \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...\"\n  ],\n  \"description\": \"Comfortable running shoes\",\n  \"rating\": 4.5,\n  \"reviews\": 12,\n  \"sizes\": [\"8\",\"9\",\"10\"],\n  \"colors\": [\"Black\",\"White\"],\n  \"tags\": [\"New Arrival\", \"Sport\"],\n  \"isNew\": true,\n  \"isLimited\": false,\n  \"isBestseller\": true\n}"
+            },
             "url": { "raw": "{{baseUrl}}/api/products", "host": ["{{baseUrl}}"], "path": ["api","products"] }
           }
         },
         {
-          "name": "Update product",
+          "name": "Create product (use existing categoryId)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Casual Sneakers\",\n  \"price\": 59.99,\n  \"categoryId\": 1,\n  \"tags\": [\"Casual\"]\n}" },
+            "url": { "raw": "{{baseUrl}}/api/products", "host": ["{{baseUrl}}"], "path": ["api","products"] }
+          }
+        },
+        {
+          "name": "Update product (partial)",
           "request": {
             "method": "PUT",
             "header": [ { "key": "Content-Type", "value": "application/json" } ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Running Shoes\",\n  \"price\": 69.99,\n  \"categoryId\": 1\n}"
+              "raw": "{\n  \"name\": \"Updated Running Shoes\",\n  \"price\": 69.99,\n  \"sizes\": [\"9\",\"10\"],\n  \"tags\": [\"Sale\",\"Sport\"]\n}"
             },
-            "url": { "raw": "{{baseUrl}}/api/products/:id", "host": ["{{baseUrl}}"], "path": ["api","products","{{id}}"] }
+            "url": { "raw": "{{baseUrl}}/api/products/{{id}}", "host": ["{{baseUrl}}"], "path": ["api","products","{{id}}"] }
           }
         },
         {
@@ -81,7 +107,7 @@
           "request": {
             "method": "DELETE",
             "header": [],
-            "url": { "raw": "{{baseUrl}}/api/products/:id", "host": ["{{baseUrl}}"], "path": ["api","products","{{id}}"] }
+            "url": { "raw": "{{baseUrl}}/api/products/{{id}}", "host": ["{{baseUrl}}"], "path": ["api","products","{{id}}"] }
           }
         }
       ]
@@ -100,7 +126,7 @@
           "name": "Get category by id",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/categories/:id", "host": ["{{baseUrl}}"], "path": ["api","categories","{{id}}"] }
+            "url": { "raw": "{{baseUrl}}/api/categories/{{id}}", "host": ["{{baseUrl}}"], "path": ["api","categories","{{id}}"] }
           }
         },
         {
@@ -118,14 +144,14 @@
             "method": "PUT",
             "header": [ { "key": "Content-Type", "value": "application/json" } ],
             "body": { "mode": "raw", "raw": "{\n  \"name\": \"Updated Category\"\n}" },
-            "url": { "raw": "{{baseUrl}}/api/categories/:id", "host": ["{{baseUrl}}"], "path": ["api","categories","{{id}}"] }
+            "url": { "raw": "{{baseUrl}}/api/categories/{{id}}", "host": ["{{baseUrl}}"], "path": ["api","categories","{{id}}"] }
           }
         },
         {
           "name": "Delete category",
           "request": {
             "method": "DELETE",
-            "url": { "raw": "{{baseUrl}}/api/categories/:id", "host": ["{{baseUrl}}"], "path": ["api","categories","{{id}}"] }
+            "url": { "raw": "{{baseUrl}}/api/categories/{{id}}", "host": ["{{baseUrl}}"], "path": ["api","categories","{{id}}"] }
           }
         }
       ]
@@ -141,7 +167,98 @@
           }
         }
       ]
+    },
+    {
+      "name": "Helpers",
+      "item": [
+        {
+          "name": "Health (root)",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/actuator/health", "host": ["{{baseUrl}}"], "path": ["actuator","health"] } }
+        },
+        {
+          "name": "Example: Find or create Tags/Sizes/Colors (client-side flow)",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "// If your backend doesn't expose tag/size/color controllers, resolve these on the client by sending strings in product payloads. The server will create missing Tag/Size/Color entities automatically when saving a product." }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Category Tiles",
+      "item": [
+        {
+          "name": "Get all category tiles",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/category-tiles", "host": ["{{baseUrl}}"], "path": ["api","category-tiles"] } }
+        },
+        {
+          "name": "Create category tile",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Footwear\",\n  \"image\": \"base64_or_url\",\n  \"link\": \"/products?category=footwear\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/category-tiles", "host": ["{{baseUrl}}"], "path": ["api","category-tiles"] }
+          }
+        },
+        {
+          "name": "Delete category tile",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/category-tiles/{{id}}", "host": ["{{baseUrl}}"], "path": ["api","category-tiles","{{id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Limited Banner",
+      "item": [
+        {
+          "name": "Get all limited banners",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/limited-banner", "host": ["{{baseUrl}}"], "path": ["api","limited-banner"] } }
+        },
+        {
+          "name": "Create limited banner",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"image\": \"base64_or_url\",\n  \"badge\": \"Exclusive Drop\",\n  \"title\": \"LIMITED EDITION\\nCOLLECTION\",\n  \"description\": \"Premium designs available for a limited time only.\",\n  \"cta\": \"Shop Limited Edition\",\n  \"link\": \"/products?tags=limited\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/limited-banner", "host": ["{{baseUrl}}"], "path": ["api","limited-banner"] }
+          }
+        },
+        {
+          "name": "Delete limited banner",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/limited-banner/{{id}}", "host": ["{{baseUrl}}"], "path": ["api","limited-banner","{{id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Loyalty Section",
+      "item": [
+        {
+          "name": "Get all loyalty sections",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/loyalty-section", "host": ["{{baseUrl}}"], "path": ["api","loyalty-section"] } }
+        },
+        {
+          "name": "Create loyalty section",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"heading\": \"Join the Top Notch Club\",\n  \"buttonText\": \"Sign Up for Free\",\n  \"description\": \"Our loyalty program rewards you for every purchase.\",\n  \"perks\": [\n    { \"icon\": \"Zap\", \"title\": \"Earn Points\", \"desc\": \"1 point for every $1 spent\" },\n    { \"icon\": \"Gift\", \"title\": \"Exclusive Rewards\", \"desc\": \"Redeem for discounts & gear\" },\n    { \"icon\": \"Award\", \"title\": \"VIP Access\", \"desc\": \"Early access to limited drops\" }\n  ]\n}" },
+            "url": { "raw": "{{baseUrl}}/api/loyalty-section", "host": ["{{baseUrl}}"], "path": ["api","loyalty-section"] }
+          }
+        },
+        {
+          "name": "Delete loyalty section",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/loyalty-section/{{id}}", "host": ["{{baseUrl}}"], "path": ["api","loyalty-section","{{id}}"] }
+          }
+        }
+      ]
     }
   ]
 }
-

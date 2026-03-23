@@ -3,11 +3,19 @@ package com.project.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+
 import java.util.List;
+
+import lombok.*;
 
 @Entity
 @Table(name = "product", schema = "dbo")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,8 +24,12 @@ public class Product {
     @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
+    private int quantity;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
+    @ToString.Exclude
     private Category category;
 
     @Column(nullable = false)
@@ -31,13 +43,15 @@ public class Product {
     @JsonIgnore // don't include raw blob in JSON responses to avoid huge payloads and serialization issues
     private byte[] imageBlob;
 
-    // store multiple image blobs (each entry is VARBINARY(MAX)) in a separate collection table
-    @ElementCollection
-    @CollectionTable(name = "product_image_blobs", joinColumns = @JoinColumn(name = "product_id"))
-    @Column(name = "image_blob", columnDefinition = "VARBINARY(MAX)")
-    @Lob
+    // store multiple images as separate entities (Image has its own id). Use a join table so Image rows don't contain product_id
+    @ManyToMany
+    @JoinTable(
+            name = "product_images",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "image_id")
+    )
     @JsonIgnore
-    private List<byte[]> imagesBlobs;
+    private List<Image> images;
 
     @Column(length = 2000)
     private String description;
@@ -45,55 +59,36 @@ public class Product {
     private double rating;
     private int reviews;
 
-    @ElementCollection
-    @CollectionTable(name = "product_sizes", joinColumns = @JoinColumn(name = "product_id"))
-    @Column(name = "size")
-    private List<String> sizes;
+    // sizes as reusable entities referenced by id via a join table
+    @ManyToMany
+    @JoinTable(
+            name = "product_sizes",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "size_id")
+    )
+    private List<Size> sizes;
 
-    @ElementCollection
-    @CollectionTable(name = "product_colors", joinColumns = @JoinColumn(name = "product_id"))
-    @Column(name = "color")
-    private List<String> colors;
+    // colors as reusable entities referenced by id via a join table
+    @ManyToMany
+    @JoinTable(
+            name = "product_colors",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "color_id")
+    )
+    private List<Color> colors;
 
-    @ElementCollection
-    @CollectionTable(name = "product_tags", joinColumns = @JoinColumn(name = "product_id"))
-    @Column(name = "tag")
-    private List<String> tags;
+    // tags as reusable entities referenced by id via a join table
+    @ManyToMany
+    @JoinTable(
+            name = "product_tags",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private List<Tag> tags;
 
     private boolean isNew;
     private boolean isLimited;
     private boolean isBestseller;
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public Category getCategory() { return category; }
-    public void setCategory(Category category) { this.category = category; }
-    public double getPrice() { return price; }
-    public void setPrice(double price) { this.price = price; }
-    public Double getOriginalPrice() { return originalPrice; }
-    public void setOriginalPrice(Double originalPrice) { this.originalPrice = originalPrice; }
-    public byte[] getImageBlob() { return imageBlob; }
-    public void setImageBlob(byte[] imageBlob) { this.imageBlob = imageBlob; }
-    public List<byte[]> getImagesBlobs() { return imagesBlobs; }
-    public void setImagesBlobs(List<byte[]> imagesBlobs) { this.imagesBlobs = imagesBlobs; }
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-    public double getRating() { return rating; }
-    public void setRating(double rating) { this.rating = rating; }
-    public int getReviews() { return reviews; }
-    public void setReviews(int reviews) { this.reviews = reviews; }
-    public List<String> getSizes() { return sizes; }
-    public void setSizes(List<String> sizes) { this.sizes = sizes; }
-    public List<String> getColors() { return colors; }
-    public void setColors(List<String> colors) { this.colors = colors; }
-    public List<String> getTags() { return tags; }
-    public void setTags(List<String> tags) { this.tags = tags; }
-    public boolean isNew() { return isNew; }
-    public void setNew(boolean aNew) { isNew = aNew; }
-    public boolean isLimited() { return isLimited; }
-    public void setLimited(boolean limited) { isLimited = limited; }
-    public boolean isBestseller() { return isBestseller; }
-    public void setBestseller(boolean bestseller) { isBestseller = bestseller; }
+    // keep minimal explicit methods if needed by JPA consumers; Lombok generated getters/setters are present
 }
