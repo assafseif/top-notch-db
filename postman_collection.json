@@ -15,6 +15,11 @@
       "key": "id",
       "value": "1",
       "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -60,6 +65,19 @@
               "raw": "{{baseUrl}}/api/products/category/{{id}}",
               "host": ["{{baseUrl}}"],
               "path": ["api","products","category","{{id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get products by category (paged)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/category/{{id}}/paged?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","products","category","{{id}","paged"]
             }
           },
           "response": []
@@ -257,6 +275,67 @@
             "method": "DELETE",
             "url": { "raw": "{{baseUrl}}/api/loyalty-section/{{id}}", "host": ["{{baseUrl}}"], "path": ["api","loyalty-section","{{id}}"] }
           }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","auth","login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.token) {",
+                  "  pm.environment.set('token', json.token);",
+                  "  console.log('Saved token into environment variable token');",
+                  "} else {",
+                  "  console.warn('No token found in response');",
+                  "}"
+                ]
+              }
+            }
+          ],
+           "response": []
+         }
+       ]
+     },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "all",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","users"]
+            }
+          },
+          "response": []
         }
       ]
     }
