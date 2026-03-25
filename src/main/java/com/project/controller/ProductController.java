@@ -1,6 +1,7 @@
 package com.project.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.project.dto.ApiResponse;
 import com.project.dto.ProductDto;
 import com.project.dto.ProductRequest;
 import com.project.entity.Category;
@@ -70,10 +71,10 @@ public class ProductController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('products.create')")
-    public Product createProduct(@RequestBody ProductRequest req) {
+    public ApiResponse<Product> createProduct(@RequestBody ProductRequest req) {
         logger.info("POST /api/products - start - name={}", req != null ? req.getName() : null);
         try {
-            return productService.createProduct(req);
+            return ApiResponse.of("Product created successfully.", productService.createProduct(req));
         } finally {
             logger.debug("POST /api/products - end");
         }
@@ -81,10 +82,10 @@ public class ProductController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('products.edit')")
-    public Product updateProduct(@PathVariable Long id, @RequestBody ProductRequest req) {
+    public ApiResponse<Product> updateProduct(@PathVariable Long id, @RequestBody ProductRequest req) {
         logger.info("PUT /api/products/{} - start - name={}", id, req != null ? req.getName() : null);
         try {
-            return productService.updateProduct(id, req);
+            return ApiResponse.of("Product updated successfully.", productService.updateProduct(id, req));
         } finally {
             logger.debug("PUT /api/products/{} - end", id);
         }
@@ -92,10 +93,11 @@ public class ProductController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('products.delete')")
-    public void deleteProduct(@PathVariable Long id) {
+    public ApiResponse<Void> deleteProduct(@PathVariable Long id) {
         logger.info("DELETE /api/products/{} - start", id);
         try {
             productService.deleteProduct(id);
+            return ApiResponse.of("Product deleted successfully.");
         } finally {
             logger.debug("DELETE /api/products/{} - end", id);
         }

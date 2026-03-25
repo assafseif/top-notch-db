@@ -1,5 +1,6 @@
 package com.project.controller;
 
+import com.project.dto.ApiResponse;
 import com.project.dto.RoleDto;
 import com.project.service.RoleService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,21 +38,22 @@ public class RoleController {
     // ✅ Create role
     @PostMapping
     @PreAuthorize("hasAuthority('roles.create')")
-    public RoleDto create(@RequestBody RoleDto role) {
-        return roleService.create(role);
+    public ApiResponse<RoleDto> create(@RequestBody RoleDto role) {
+        return ApiResponse.of("Role created successfully.", roleService.create(role));
     }
 
     // ✅ Update role
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('roles.edit')")
-    public RoleDto update(@PathVariable Long id, @RequestBody RoleDto role) {
-        return roleService.update(id, role);
+    public ApiResponse<RoleDto> update(@PathVariable Long id, @RequestBody RoleDto role) {
+        return ApiResponse.of("Role updated successfully.", roleService.update(id, role));
     }
 
     // ✅ Delete role
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('roles.delete')")
-    public void delete(@PathVariable Long id) {
+    public ApiResponse<Void> delete(@PathVariable Long id) {
         roleService.delete(id);
+        return ApiResponse.of("Role deleted successfully.");
     }
 }

@@ -1,5 +1,6 @@
 package com.project.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,7 +27,9 @@ public class AppUserDto {
     private Long roleId;
     private String roleName;
 
-    private boolean active = true;
+    @JsonProperty("isActive")
+    @JsonAlias("active")
+    private Boolean active = true;
     private Date createdAt;
 }
 

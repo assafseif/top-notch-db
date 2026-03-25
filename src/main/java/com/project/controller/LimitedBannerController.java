@@ -1,5 +1,6 @@
 package com.project.controller;
 
+import com.project.dto.ApiResponse;
 import com.project.dto.LimitedBannerRequest;
 import com.project.entity.LimitedBanner;
 import com.project.service.LimitedBannerService;
@@ -16,8 +17,11 @@ public class LimitedBannerController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('homepage.edit')")
-    public LimitedBanner createOrUpdateLimitedBanner(@RequestBody LimitedBannerRequest request) {
-        return limitedBannerService.createOrUpdateLimitedBanner(request);
+    public ApiResponse<LimitedBanner> createOrUpdateLimitedBanner(@RequestBody LimitedBannerRequest request) {
+        String message = request != null && request.getId() != null
+                ? "Limited banner updated successfully."
+                : "Limited banner created successfully.";
+        return ApiResponse.of(message, limitedBannerService.createOrUpdateLimitedBanner(request));
     }
 
     @GetMapping
@@ -33,7 +37,8 @@ public class LimitedBannerController {
     }
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('homepage.edit')")
-    public void deleteLimitedBanner(@PathVariable Long id) {
+    public ApiResponse<Void> deleteLimitedBanner(@PathVariable Long id) {
         limitedBannerService.deleteLimitedBanner(id);
+        return ApiResponse.of("Limited banner deleted successfully.");
     }
 }

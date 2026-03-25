@@ -1,5 +1,6 @@
 package com.project.controller;
 
+import com.project.dto.ApiResponse;
 import com.project.dto.HeroBannerRequest;
 import com.project.entity.HeroBanner;
 import com.project.service.HeroBannerService;
@@ -16,8 +17,11 @@ public class HeroBannerController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('homepage.edit')")
-    public HeroBanner createOrUpdateHeroBanner(@RequestBody HeroBannerRequest request) {
-        return heroBannerService.createOrUpdateHeroBanner(request);
+    public ApiResponse<HeroBanner> createOrUpdateHeroBanner(@RequestBody HeroBannerRequest request) {
+        String message = request != null && request.getId() != null
+                ? "Hero banner updated successfully."
+                : "Hero banner created successfully.";
+        return ApiResponse.of(message, heroBannerService.createOrUpdateHeroBanner(request));
     }
 
     @GetMapping
@@ -34,7 +38,8 @@ public class HeroBannerController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('homepage.edit')")
-    public void deleteHeroBanner(@PathVariable Long id) {
+    public ApiResponse<Void> deleteHeroBanner(@PathVariable Long id) {
         heroBannerService.deleteHeroBanner(id);
+        return ApiResponse.of("Hero banner deleted successfully.");
     }
 }

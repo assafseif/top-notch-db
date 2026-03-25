@@ -1,6 +1,7 @@
 package com.project.controller;
 
 import com.project.dto.AppUserDto;
+import com.project.dto.ApiResponse;
 import com.project.entity.AppUser;
 import com.project.repository.AppUserRepository;
 import com.project.repository.RoleRepository;
@@ -23,8 +24,20 @@ public class AppUserController {
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasAuthority('users.edit')")
-    public AppUserDto partialUpdate(@PathVariable Long id, @RequestBody AppUserDto user) {
-        return appUserService.partialUpdate(id, user);
+    public ApiResponse<AppUserDto> partialUpdate(@PathVariable Long id, @RequestBody AppUserDto user) {
+        AppUserDto updatedUser = appUserService.partialUpdate(id, user);
+        boolean passwordOnlyUpdate = user.getPassword() != null
+                && !user.getPassword().isBlank()
+                && user.getUsername() == null
+                && user.getFullName() == null
+                && user.getEmail() == null
+                && user.getRoleId() == null
+                && user.getActive() == null;
+
+        return ApiResponse.of(
+                passwordOnlyUpdate ? "Password updated successfully." : "User updated successfully.",
+                updatedUser
+        );
     }
 
 
@@ -44,21 +57,22 @@ public class AppUserController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('users.create')")
-    public AppUserDto create(@RequestBody AppUserDto user) {
-        return appUserService.create(user);
+    public ApiResponse<AppUserDto> create(@RequestBody AppUserDto user) {
+        return ApiResponse.of("User created successfully.", appUserService.create(user));
     }
 
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('users.edit')")
-    public AppUserDto update(@PathVariable Long id, @RequestBody AppUserDto user) {
-        return appUserService.update(id, user);
+    public ApiResponse<AppUserDto> update(@PathVariable Long id, @RequestBody AppUserDto user) {
+        return ApiResponse.of("User updated successfully.", appUserService.update(id, user));
     }
 
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('users.delete')")
-    public void delete(@PathVariable Long id) {
+    public ApiResponse<Void> delete(@PathVariable Long id) {
         appUserService.delete(id);
+        return ApiResponse.of("User deleted successfully.");
     }
 }

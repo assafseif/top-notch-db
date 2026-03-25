@@ -37,6 +37,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Locale;
+import java.util.NoSuchElementException;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -113,6 +114,7 @@ public class ProductServiceImpl implements ProductService {
     public Product createProduct(ProductRequest req) {
         logger.info("createProduct - start name={}", req != null ? req.getName() : null);
         try {
+            validateProductRequest(req, true);
             Product product = new Product();
             product.setName(req.getName());
             product.setPrice(req.getPrice() != null ? req.getPrice() : 0.0);
@@ -188,8 +190,9 @@ public class ProductServiceImpl implements ProductService {
     public Product updateProduct(Long id, ProductRequest req) {
         logger.info("updateProduct - start id={} name={}", id, req != null ? req.getName() : null);
         try {
-            Product product = productRepository.findById(id).orElse(new Product());
-            product.setId(id);
+            validateProductRequest(req, false);
+            Product product = productRepository.findById(id)
+                    .orElseThrow(() -> new NoSuchElementException("Product not found."));
             product.setName(req.getName() != null ? req.getName() : product.getName());
             product.setPrice(req.getPrice() != null ? req.getPrice() : product.getPrice());
             product.setOriginalPrice(req.getOriginalPrice() != null ? req.getOriginalPrice() : product.getOriginalPrice());
@@ -260,6 +263,9 @@ public class ProductServiceImpl implements ProductService {
     public void deleteProduct(Long id) {
         logger.info("deleteProduct - start id={}", id);
         try {
+            if (!productRepository.existsById(id)) {
+                throw new NoSuchElementException("Product not found.");
+            }
             productRepository.deleteById(id);
             logger.info("deleteProduct - deleted id={}", id);
         } catch (Exception e) {
@@ -513,6 +519,27 @@ public class ProductServiceImpl implements ProductService {
         } catch (EntityNotFoundException exception) {
             logger.warn("Product {} references missing category {}", product.getId(), categoryId);
             return new CategorySummaryDto(categoryId, null);
+        }
+    }
+
+    private void validateProductRequest(ProductRequest req, boolean creating) {
+        if (req == null) {
+            throw new IllegalArgumentException("Product details are required.");
+        }
+        if (req.getName() == null || req.getName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Product name is required.");
+        }
+        if (req.getPrice() == null || req.getPrice() <= 0) {
+            throw new IllegalArgumentException("Product price must be greater than zero.");
+        }
+        if (req.getQuantity() != null && req.getQuantity() < 0) {
+            throw new IllegalArgumentException("Product quantity cannot be negative.");
+        }
+        if (req.getCategoryId() == null && (req.getCategoryName() == null || req.getCategoryName().trim().isEmpty())) {
+            throw new IllegalArgumentException("Product category is required.");
+        }
+        if (creating && (req.getImagesBase64() == null || req.getImagesBase64().isEmpty())) {
+            throw new IllegalArgumentException("At least one product image is required.");
         }
     }
 

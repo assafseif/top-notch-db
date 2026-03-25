@@ -1,5 +1,6 @@
 package com.project.controller;
 
+import com.project.dto.ApiResponse;
 import com.project.dto.CategoryTileRequest;
 import com.project.entity.CategoryTile;
 import com.project.service.CategoryTileService;
@@ -16,8 +17,11 @@ public class CategoryTileController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('homepage.edit')")
-    public CategoryTile createOrUpdateCategoryTile(@RequestBody CategoryTileRequest request) {
-        return categoryTileService.createOrUpdateCategoryTile(request);
+    public ApiResponse<CategoryTile> createOrUpdateCategoryTile(@RequestBody CategoryTileRequest request) {
+        String message = request != null && request.getId() != null
+                ? "Category tile updated successfully."
+                : "Category tile created successfully.";
+        return ApiResponse.of(message, categoryTileService.createOrUpdateCategoryTile(request));
     }
 
     @GetMapping
@@ -33,7 +37,8 @@ public class CategoryTileController {
     }
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('homepage.edit')")
-    public void deleteCategoryTile(@PathVariable Long id) {
+    public ApiResponse<Void> deleteCategoryTile(@PathVariable Long id) {
         categoryTileService.deleteCategoryTile(id);
+        return ApiResponse.of("Category tile deleted successfully.");
     }
 }

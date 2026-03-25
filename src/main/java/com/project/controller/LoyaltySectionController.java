@@ -1,5 +1,6 @@
 package com.project.controller;
 
+import com.project.dto.ApiResponse;
 import com.project.dto.LoyaltySectionRequest;
 import com.project.entity.LoyaltySection;
 import com.project.service.LoyaltySectionService;
@@ -16,8 +17,11 @@ public class LoyaltySectionController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('homepage.edit')")
-    public LoyaltySection createOrUpdateLoyaltySection(@RequestBody LoyaltySectionRequest request) {
-        return loyaltySectionService.createOrUpdateLoyaltySection(request);
+    public ApiResponse<LoyaltySection> createOrUpdateLoyaltySection(@RequestBody LoyaltySectionRequest request) {
+        String message = request != null && request.getId() != null
+                ? "Loyalty section updated successfully."
+                : "Loyalty section created successfully.";
+        return ApiResponse.of(message, loyaltySectionService.createOrUpdateLoyaltySection(request));
     }
 
     @GetMapping
