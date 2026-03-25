@@ -23,7 +23,7 @@ jwt:
 
 app:
   cors:
-    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://109.205.180.47:89}
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://109.205.180.47:89}
 
 # NOTE: For local development it is OK to set trustServerCertificate=true (accept self-signed certs).
 # For production, import the SQL Server certificate into the JVM truststore and do NOT use trustServerCertificate=true.

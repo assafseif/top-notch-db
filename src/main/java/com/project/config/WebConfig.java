@@ -16,7 +16,7 @@ public class WebConfig {
     private static final Logger logger = LoggerFactory.getLogger(WebConfig.class);
     private final List<String> allowedOrigins;
 
-    public WebConfig(@Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:89}") String allowedOrigins) {
+    public WebConfig(@Value("${app.cors.allowed-origins:http://109.205.180.47:89}") String allowedOrigins) {
         this.allowedOrigins = Arrays.stream(allowedOrigins.split(","))
             .map(String::trim)
             .filter(origin -> !origin.isEmpty())
