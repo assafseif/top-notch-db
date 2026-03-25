@@ -1,6 +1,4 @@
 package com.project.dto;
-
-import com.project.entity.Category;
 import lombok.*;
 
 import java.util.List;
@@ -26,11 +24,15 @@ public class ProductDto {
     private Boolean isLimited;
     private Boolean isBestseller;
 
-    // primary image as base64 string (data URL safe)
+    // cacheable backend URL for the primary image
+    private String imageUrl;
+    // cacheable backend URLs for gallery images
+    private List<String> imageUrls;
+
+    // legacy fields kept for backwards compatibility
     private String imageBase64;
-    // additional images as base64 strings
     private List<String> imagesBase64;
-    private Category category;
+    private CategorySummaryDto category;
 
 //    private Long categoryId;
 //    private String categoryName;

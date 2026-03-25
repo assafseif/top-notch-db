@@ -2,6 +2,7 @@ package com.project.service.impl;
 
 import com.project.entity.Category;
 import com.project.repository.CategoryRepository;
+import com.project.repository.ProductRepository;
 import com.project.service.CategoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,9 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Autowired
     private CategoryRepository categoryRepository;
+
+    @Autowired
+    private ProductRepository productRepository;
 
     @Override
     public List<Category> getAllCategories() {
@@ -82,6 +86,10 @@ public class CategoryServiceImpl implements CategoryService {
     public void deleteCategory(Long id) {
         logger.info("deleteCategory - start id={}", id);
         try {
+            long productCount = productRepository.countByCategory_Id(id);
+            if (productCount > 0) {
+                throw new IllegalStateException("Cannot delete category with existing products");
+            }
             categoryRepository.deleteById(id);
             logger.info("deleteCategory - deleted id={}", id);
         } catch (Exception e) {

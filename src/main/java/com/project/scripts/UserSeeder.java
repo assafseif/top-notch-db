@@ -4,6 +4,8 @@ import com.project.entity.AppUser;
 import com.project.entity.Role;
 import com.project.repository.AppUserRepository;
 import com.project.repository.RoleRepository;
+import com.project.repository.PermissionRepository;
+import com.project.entity.Permission;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,28 +21,12 @@ public class UserSeeder implements CommandLineRunner {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private PermissionRepository permissionRepository;
+
     @Override
     @Transactional
     public void run(String... args) {
-        if (appUserRepository.findByUsername("admin") == null) {
-            Role adminRole = roleRepository.findByName("Super Admin");
-            if (adminRole == null) {
-                adminRole = Role.builder()
-                        .name("Super Admin")
-                        .description("Full access to everything")
-                        .isSystem(true)
-                        .build();
-                adminRole = roleRepository.save(adminRole);
-            }
-            AppUser admin = AppUser.builder()
-                    .username("admin")
-                    .password(passwordEncoder.encode("admin"))
-                    .fullName("Admin")
-                    .email("admin@topnotch.com")
-                    .role(adminRole)
-                    .isActive(true)
-                    .build();
-            appUserRepository.save(admin);
-        }
+
     }
 }

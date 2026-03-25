@@ -75,4 +75,10 @@ public class HeroBannerServiceImpl implements HeroBannerService {
     public HeroBanner getHeroBanner(Long id) {
         return heroBannerRepository.findById(id).orElse(null);
     }
+
+    @Override
+    @Transactional
+    public void deleteHeroBanner(Long id) {
+        heroBannerRepository.deleteById(id);
+    }
 }

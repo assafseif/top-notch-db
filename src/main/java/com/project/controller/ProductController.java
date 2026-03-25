@@ -11,6 +11,7 @@ import com.project.service.ProductService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 
@@ -30,6 +31,7 @@ public class ProductController {
 
     // Unpaged (legacy)
     @GetMapping
+    @PreAuthorize("hasAuthority('products.view')")
     public List<ProductDto> getAllProducts() {
         logger.info("GET /api/products - start");
         try {
@@ -41,17 +43,22 @@ public class ProductController {
 
     // Paged
     @GetMapping("/paged")
-    public Page<ProductDto> getAllProductsPaged(@RequestParam(defaultValue = "0") int page,
+    @PreAuthorize("hasAuthority('products.view')")
+    public Page<ProductDto> getAllProductsPaged(@RequestParam(required = false) Long categoryId,
+                                                @RequestParam(required = false) String search,
+                                                @RequestParam(defaultValue = "newest") String sortBy,
+                                                @RequestParam(defaultValue = "0") int page,
                                                 @RequestParam(defaultValue = "10") int size) {
-        logger.info("GET /api/products/paged - start page={} size={}", page, size);
+        logger.info("GET /api/products/paged - start categoryId={} search={} sortBy={} page={} size={}", categoryId, search, sortBy, page, size);
         try {
-            return productService.getAllProductsWithImagesPaged(page, size);
+            return productService.getAdminProducts(categoryId, search, sortBy, page, size);
         } finally {
             logger.debug("GET /api/products/paged - end");
         }
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('products.view')")
     public ProductDto getProduct(@PathVariable Long id) {
         logger.info("GET /api/products/{} - start", id);
         try {
@@ -62,6 +69,7 @@ public class ProductController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('products.create')")
     public Product createProduct(@RequestBody ProductRequest req) {
         logger.info("POST /api/products - start - name={}", req != null ? req.getName() : null);
         try {
@@ -72,6 +80,7 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('products.edit')")
     public Product updateProduct(@PathVariable Long id, @RequestBody ProductRequest req) {
         logger.info("PUT /api/products/{} - start - name={}", id, req != null ? req.getName() : null);
         try {
@@ -82,6 +91,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('products.delete')")
     public void deleteProduct(@PathVariable Long id) {
         logger.info("DELETE /api/products/{} - start", id);
         try {
@@ -93,6 +103,7 @@ public class ProductController {
 
     // Unpaged (legacy)
     @GetMapping("/category/{categoryId}")
+    @PreAuthorize("hasAuthority('products.view')")
     public List<ProductDto> getProductsByCategory(@PathVariable Long categoryId) {
         logger.info("GET /api/products/category/{} - start", categoryId);
         try {
@@ -104,12 +115,14 @@ public class ProductController {
 
     // Paged
     @GetMapping("/category/{categoryId}/paged")
+    @PreAuthorize("hasAuthority('products.view')")
     public Page<ProductDto> getProductsByCategoryPaged(@PathVariable Long categoryId,
+                                                      @RequestParam(defaultValue = "newest") String sortBy,
                                                       @RequestParam(defaultValue = "0") int page,
                                                       @RequestParam(defaultValue = "10") int size) {
-        logger.info("GET /api/products/category/{}/paged - start page={} size={}", categoryId, page, size);
+        logger.info("GET /api/products/category/{}/paged - start sortBy={} page={} size={}", categoryId, sortBy, page, size);
         try {
-            return productService.getProductsByCategoryIdPaged(categoryId, page, size);
+            return productService.getAdminProducts(categoryId, null, sortBy, page, size);
         } finally {
             logger.debug("GET /api/products/category/{}/paged - end", categoryId);
         }

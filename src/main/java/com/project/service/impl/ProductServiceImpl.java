@@ -1,6 +1,7 @@
 package com.project.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.project.dto.CategorySummaryDto;
 import com.project.dto.ProductCategoryDto;
 import com.project.dto.ProductDto;
 import com.project.dto.ProductRequest;
@@ -17,6 +18,8 @@ import com.project.repository.TagRepository;
 import com.project.repository.SizeRepository;
 import com.project.repository.ColorRepository;
 import com.project.service.ProductService;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +27,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -57,35 +63,20 @@ public class ProductServiceImpl implements ProductService {
     @Autowired
     private ColorRepository colorRepository;
 
+    @Autowired
+    private EntityManagerFactory entityManagerFactory;
+
 
     @Override
     @Transactional(readOnly = true)
     public Page<ProductDto> getAllProductsWithImagesPaged(int page, int size) {
-        logger.info("getAllProductsWithImagesPaged - start page={} size={}", page, size);
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Product> productPage = productRepository.findAll(pageable);
-        List<ProductDto> dtos = new ArrayList<>();
-        for (Product p : productPage.getContent()) {
-            dtos.add(mapToDto(p));
-        }
-        Page<ProductDto> dtoPage = new PageImpl<>(dtos, pageable, productPage.getTotalElements());
-        logger.info("getAllProductsWithImagesPaged - returning {} items", dtos.size());
-        return dtoPage;
+        return getStoreProducts(null, "newest", page, size);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ProductDto> getProductsByCategoryIdPaged(Long categoryId, int page, int size) {
-        logger.info("getProductsByCategoryIdPaged - start categoryId={} page={} size={}", categoryId, page, size);
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Product> productPage = productRepository.findAllByCategory_Id(categoryId, pageable);
-        List<ProductDto> dtos = new ArrayList<>();
-        for (Product p : productPage.getContent()) {
-            dtos.add(mapToDto(p));
-        }
-        Page<ProductDto> dtoPage = new PageImpl<>(dtos, pageable, productPage.getTotalElements());
-        logger.info("getProductsByCategoryIdPaged - returning {} items for categoryId={}", dtos.size(), categoryId);
-        return dtoPage;
+        return getStoreProducts(categoryId, "newest", page, size);
     }
 
     @Override
@@ -163,15 +154,10 @@ public class ProductServiceImpl implements ProductService {
             // If client provided base64 images convert all images to Image entities
             if (req.getImagesBase64() != null && !req.getImagesBase64().isEmpty()) {
                 List<Image> imgs = new ArrayList<>();
-                for (String base64 : req.getImagesBase64()) {
-                    if (base64 == null || base64.isBlank()) continue;
-                    try {
-                        byte[] decoded = Base64.getDecoder().decode(base64.replaceFirst("^data:.*;base64,", ""));
-                        Image img = new Image();
-                        img.setData(decoded);
+                for (String imagePayload : req.getImagesBase64()) {
+                    Image img = decodeImagePayload(imagePayload);
+                    if (img != null) {
                         imgs.add(img);
-                    } catch (IllegalArgumentException ex) {
-                        logger.warn("Failed to decode one base64 image - skipping", ex);
                     }
                 }
                 if (!imgs.isEmpty()) {
@@ -245,15 +231,10 @@ public class ProductServiceImpl implements ProductService {
             // images convert - if provided, replace existing images
             if (req.getImagesBase64() != null) {
                 List<Image> imgs = new ArrayList<>();
-                for (String base64 : req.getImagesBase64()) {
-                    if (base64 == null || base64.isBlank()) continue;
-                    try {
-                        byte[] decoded = Base64.getDecoder().decode(base64.replaceFirst("^data:.*;base64,", ""));
-                        Image img = new Image();
-                        img.setData(decoded);
+                for (String imagePayload : req.getImagesBase64()) {
+                    Image img = decodeImagePayload(imagePayload);
+                    if (img != null) {
                         imgs.add(img);
-                    } catch (IllegalArgumentException ex) {
-                        logger.warn("Failed to decode one base64 image - skipping", ex);
                     }
                 }
                 if (!imgs.isEmpty()) {
@@ -300,9 +281,10 @@ public class ProductServiceImpl implements ProductService {
                 dto.setId(p.getId());
                 dto.setName(p.getName());
                 dto.setPrice(p.getPrice());
-                if (p.getCategory() != null) {
-                    dto.setCategoryId(p.getCategory().getId());
-                    dto.setCategoryName(p.getCategory().getName());
+                CategorySummaryDto category = mapCategorySummary(p);
+                if (category != null) {
+                    dto.setCategoryId(category.getId());
+                    dto.setCategoryName(category.getName());
                 }
                 dtos.add(dto);
             }
@@ -321,11 +303,7 @@ public class ProductServiceImpl implements ProductService {
     public List<ProductDto> getAllProductsWithImages() {
         logger.info("getAllProductsWithImages - start");
         try {
-            List<Product> products = productRepository.findAll();
-            List<ProductDto> dtos = new ArrayList<>();
-            for (Product p : products) {
-                dtos.add(mapToDto(p));
-            }
+            List<ProductDto> dtos = getStoreProducts(null, "newest", 0, Integer.MAX_VALUE).getContent();
             logger.info("getAllProductsWithImages - returning {} items", dtos.size());
             return dtos;
         } catch (Exception e) {
@@ -363,11 +341,7 @@ public class ProductServiceImpl implements ProductService {
     public List<com.project.dto.ProductDto> getProductsByCategoryId(Long categoryId) {
         logger.info("getProductsByCategoryId - start categoryId={}", categoryId);
         try {
-            List<Product> products = productRepository.findAllByCategory_Id(categoryId);
-            List<ProductDto> dtos = new ArrayList<>();
-            for (Product p : products) {
-                dtos.add(mapToDto(p));
-            }
+            List<ProductDto> dtos = getStoreProducts(categoryId, "newest", 0, Integer.MAX_VALUE).getContent();
             logger.info("getProductsByCategoryId - returning {} items for categoryId={}", dtos.size(), categoryId);
             return dtos;
         } catch (Exception e) {
@@ -376,6 +350,66 @@ public class ProductServiceImpl implements ProductService {
         } finally {
             logger.debug("getProductsByCategoryId - end categoryId={}", categoryId);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductDto> getStoreProducts(Long categoryId, String sortBy, int page, int size) {
+        logger.info("getStoreProducts - start categoryId={} sortBy={} page={} size={}", categoryId, sortBy, page, size);
+        return queryProducts(categoryId, null, sortBy, page, size);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductDto> getAdminProducts(Long categoryId, String search, String sortBy, int page, int size) {
+        logger.info("getAdminProducts - start categoryId={} search={} sortBy={} page={} size={}", categoryId, search, sortBy, page, size);
+        return queryProducts(categoryId, search, sortBy, page, size);
+    }
+
+    private Page<ProductDto> queryProducts(Long categoryId, String search, String sortBy, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, resolveSort(sortBy));
+        Specification<Product> specification = Specification.where(hasCategory(categoryId)).and(matchesSearch(search));
+        Page<Product> productPage = productRepository.findAll(specification, pageable);
+        List<ProductDto> dtos = new ArrayList<>();
+        for (Product product : productPage.getContent()) {
+            dtos.add(mapToDto(product));
+        }
+        return new PageImpl<>(dtos, pageable, productPage.getTotalElements());
+    }
+
+    private Specification<Product> hasCategory(Long categoryId) {
+        return (root, query, criteriaBuilder) -> {
+            if (categoryId == null) {
+                return criteriaBuilder.conjunction();
+            }
+            return criteriaBuilder.equal(root.join("category").get("id"), categoryId);
+        };
+    }
+
+    private Specification<Product> matchesSearch(String search) {
+        return (root, query, criteriaBuilder) -> {
+            if (search == null || search.isBlank()) {
+                return criteriaBuilder.conjunction();
+            }
+
+            String pattern = "%" + search.trim().toLowerCase(Locale.ROOT) + "%";
+            return criteriaBuilder.or(
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), pattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), pattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.join("category").get("name")), pattern)
+            );
+        };
+    }
+
+    private Sort resolveSort(String sortBy) {
+        String normalizedSort = sortBy == null ? "newest" : sortBy.trim().toLowerCase(Locale.ROOT);
+        return switch (normalizedSort) {
+            case "popular" -> Sort.by(Sort.Order.desc("reviews"), Sort.Order.desc("rating"), Sort.Order.desc("id"));
+            case "rating" -> Sort.by(Sort.Order.desc("rating"), Sort.Order.desc("reviews"), Sort.Order.desc("id"));
+            case "price-low" -> Sort.by(Sort.Order.asc("price"), Sort.Order.desc("id"));
+            case "price-high" -> Sort.by(Sort.Order.desc("price"), Sort.Order.desc("id"));
+            default -> Sort.by(Sort.Order.desc("id"));
+        };
     }
 
     private ProductDto mapToDto(Product p) {
@@ -416,34 +450,70 @@ public class ProductServiceImpl implements ProductService {
         dto.setIsBestseller(p.isBestseller());
         dto.setQuantity(p.getQuantity());
 
-        // primary image
-        if (p.getImageBlob() != null && p.getImageBlob().length > 0) {
-            try {
-                String base64 = Base64.getEncoder().encodeToString(p.getImageBlob());
-                dto.setImageBase64("data:image/*;base64," + base64);
-            } catch (Exception e) {
-                logger.warn("mapToDto - failed to encode primary image for product {}", p.getId(), e);
+        // Prefer cacheable image URLs over embedding image bytes in the JSON payload.
+        if (p.getImages() != null && !p.getImages().isEmpty()) {
+            List<String> imageUrls = new ArrayList<>();
+            for (Image img : p.getImages()) {
+                if (img == null || img.getId() == null) {
+                    continue;
+                }
+                imageUrls.add("/api/images/" + img.getId());
+            }
+            if (!imageUrls.isEmpty()) {
+                dto.setImageUrls(imageUrls);
+                dto.setImageUrl(imageUrls.get(0));
             }
         }
 
-        // additional images from Image entities
-        if (p.getImages() != null && !p.getImages().isEmpty()) {
-            List<String> images = new ArrayList<>();
-            for (Image img : p.getImages()) {
-                if (img == null || img.getData() == null || img.getData().length == 0) continue;
-                try {
-                    images.add("data:image/*;base64," + Base64.getEncoder().encodeToString(img.getData()));
-                } catch (Exception e) {
-                    logger.warn("mapToDto - failed to encode one image for product {}", p.getId(), e);
+        if (dto.getImageUrl() == null && p.getImageBlob() != null && p.getImageBlob().length > 0) {
+            String primaryImageUrl = "/api/store/products/" + p.getId() + "/primary-image";
+            dto.setImageUrl(primaryImageUrl);
+            dto.setImageUrls(List.of(primaryImageUrl));
+        }
+
+        dto.setCategory(mapCategorySummary(p));
+        return dto;
+    }
+
+    private Image decodeImagePayload(String imagePayload) {
+        if (imagePayload == null || imagePayload.isBlank()) {
+            return null;
+        }
+
+        try {
+            Image image = new Image();
+            String cleanBase64 = imagePayload;
+            if (imagePayload.startsWith("data:")) {
+                String[] parts = imagePayload.split(",", 2);
+                if (parts.length == 2) {
+                    cleanBase64 = parts[1];
+                    image.setContentType(parts[0].replace("data:", "").replace(";base64", ""));
                 }
             }
-            if (!images.isEmpty()) dto.setImagesBase64(images);
+            image.setData(Base64.getDecoder().decode(cleanBase64));
+            return image;
+        } catch (IllegalArgumentException ex) {
+            logger.warn("Failed to decode one base64 image - skipping", ex);
+            return null;
+        }
+    }
+
+    private CategorySummaryDto mapCategorySummary(Product product) {
+        if (product == null || product.getCategory() == null) {
+            return null;
         }
 
-        if (p.getCategory() != null) {
-            dto.setCategory(p.getCategory());
+        Object categoryIdentifier = entityManagerFactory
+                .getPersistenceUnitUtil()
+                .getIdentifier(product.getCategory());
+
+        Long categoryId = categoryIdentifier instanceof Long ? (Long) categoryIdentifier : null;
+        try {
+            return new CategorySummaryDto(categoryId, product.getCategory().getName());
+        } catch (EntityNotFoundException exception) {
+            logger.warn("Product {} references missing category {}", product.getId(), categoryId);
+            return new CategorySummaryDto(categoryId, null);
         }
-        return dto;
     }
 
     // helpers to resolve or create tag/size/color entities

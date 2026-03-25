@@ -1,11 +1,16 @@
 package com.project.scripts;
 
+import com.project.entity.AppUser;
 import com.project.entity.Permission;
 import com.project.entity.PermissionGroup;
+import com.project.entity.Role;
+import com.project.repository.AppUserRepository;
 import com.project.repository.PermissionGroupRepository;
 import com.project.repository.PermissionRepository;
+import com.project.repository.RoleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +22,14 @@ public class PermissionSeeder implements CommandLineRunner {
     private PermissionRepository permissionRepository;
     @Autowired
     private PermissionGroupRepository permissionGroupRepository;
+
+    @Autowired
+    private AppUserRepository appUserRepository;
+    @Autowired
+    private RoleRepository roleRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
 
     @Override
     @Transactional
@@ -89,6 +102,31 @@ public class PermissionSeeder implements CommandLineRunner {
                 }
             }
             permissionGroupRepository.save(group);
+        }
+
+        Role adminRole = roleRepository.findByName("Super Admin");
+        if (adminRole == null) {
+            adminRole = Role.builder()
+                    .name("Super Admin")
+                    .description("Full access to everything")
+                    .isSystem(true)
+                    .build();
+            adminRole = roleRepository.save(adminRole);
+        }
+        // Assign all permissions to Super Admin role (always)
+        java.util.List<Permission> allPermissions = permissionRepository.findAll();
+        adminRole.setPermissions(new java.util.HashSet<>(allPermissions));
+        adminRole = roleRepository.save(adminRole);
+        if (appUserRepository.findByUsername("admin") == null) {
+            AppUser admin = AppUser.builder()
+                    .username("admin")
+                    .password(passwordEncoder.encode("admin"))
+                    .fullName("Admin")
+                    .email("admin@topnotch.com")
+                    .role(adminRole)
+                    .isActive(true)
+                    .build();
+            appUserRepository.save(admin);
         }
     }
 

@@ -4,6 +4,7 @@ import com.project.dto.ProductRequest;
 import com.project.dto.ProductCategoryDto;
 import com.project.dto.ProductDto;
 import com.project.entity.Product;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -21,8 +22,10 @@ public interface ProductService {
     List<ProductDto> getAllProductsWithImages();
     ProductDto getProductWithImages(Long id);
     List<ProductDto> getProductsByCategoryId(Long categoryId);
+    Page<ProductDto> getStoreProducts(Long categoryId, String sortBy, int page, int size);
+    Page<ProductDto> getAdminProducts(Long categoryId, String search, String sortBy, int page, int size);
 
     // PAGINATED versions
-    org.springframework.data.domain.Page<ProductDto> getAllProductsWithImagesPaged(int page, int size);
-    org.springframework.data.domain.Page<ProductDto> getProductsByCategoryIdPaged(Long categoryId, int page, int size);
+    Page<ProductDto> getAllProductsWithImagesPaged(int page, int size);
+    Page<ProductDto> getProductsByCategoryIdPaged(Long categoryId, int page, int size);
 }

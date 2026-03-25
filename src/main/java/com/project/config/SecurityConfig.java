@@ -26,10 +26,16 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/login").permitAll()
-                // Only admin endpoints require authentication
-                .requestMatchers("/api/permissions/**", "/api/roles/**", "/api/permission-groups/**", "/api/users/**").authenticated()
-                .requestMatchers("/api/**").permitAll()
+                .requestMatchers("/api/auth/login", "/api/store/products/**", "/api/categories/**").permitAll()
+                .requestMatchers(
+                    "/api/auth/validate",
+                    "/api/current-permissions",
+                    "/api/products/**",
+                    "/api/permissions/**",
+                    "/api/roles/**",
+                    "/api/permission-groups/**",
+                    "/api/users/**"
+                ).authenticated()
                 .anyRequest().permitAll()
             );
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

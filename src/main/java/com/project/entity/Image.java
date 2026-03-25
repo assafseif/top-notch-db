@@ -1,5 +1,6 @@
 package com.project.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,6 +26,7 @@ public class Image {
     // store image binary if you prefer DB storage (nullable if using external storage)
     @Lob
     @Column(name = "data", columnDefinition = "VARBINARY(MAX)")
+    @JsonIgnore
     private byte[] data;
 
     public Image(String filename, String contentType) {

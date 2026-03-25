@@ -8,4 +8,5 @@ public interface HeroBannerService {
     HeroBanner createOrUpdateHeroBanner(HeroBannerRequest request);
     List<HeroBanner> getAllHeroBanners();
     HeroBanner getHeroBanner(Long id);
+    void deleteHeroBanner(Long id);
 }
