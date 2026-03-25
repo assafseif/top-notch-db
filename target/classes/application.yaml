@@ -1,21 +1,29 @@
 spring:
   datasource:
-    url: jdbc:sqlserver://localhost:1433;databaseName=topnotchdb;encrypt=true;trustServerCertificate=true
-    username: sa
-    password: P@ssw0rd
-    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    url: ${SPRING_DATASOURCE_URL:jdbc:sqlserver://localhost:1433;databaseName=topnotchdb;encrypt=true;trustServerCertificate=true}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:P@ssw0rd}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:com.microsoft.sqlserver.jdbc.SQLServerDriver}
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:create-drop}
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.SQLServerDialect
+        dialect: ${SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT:org.hibernate.dialect.SQLServerDialect}
   jackson:
     serialization:
-      WRITE_DATES_AS_TIMESTAMPS: false
+      WRITE_DATES_AS_TIMESTAMPS: ${SPRING_JACKSON_SERIALIZATION_WRITE_DATES_AS_TIMESTAMPS:false}
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
+
+jwt:
+  secret: ${JWT_SECRET:topnotchSecretKey}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://109.205.180.47:89}
 
 # NOTE: For local development it is OK to set trustServerCertificate=true (accept self-signed certs).
 # For production, import the SQL Server certificate into the JVM truststore and do NOT use trustServerCertificate=true.
