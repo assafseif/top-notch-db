@@ -1,4 +1,6 @@
 package com.project.config;
+import com.project.security.BulkheadFilter;
+import com.project.security.RateLimitFilter;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 
@@ -20,6 +22,12 @@ public class SecurityConfig {
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    @Autowired
+    private RateLimitFilter rateLimitFilter;
+
+    @Autowired
+    private BulkheadFilter bulkheadFilter;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -39,6 +47,8 @@ public class SecurityConfig {
                 .anyRequest().permitAll()
             );
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(rateLimitFilter, JwtAuthenticationFilter.class);
+        http.addFilterBefore(bulkheadFilter, RateLimitFilter.class);
         return http.build();
     }
 

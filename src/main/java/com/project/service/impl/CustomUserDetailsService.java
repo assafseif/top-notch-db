@@ -9,6 +9,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,6 +22,10 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         AppUser user = appUserRepository.findByUsername(username);
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found.");
+        }
+
         // Force initialization of permissions to avoid LazyInitializationException
         if (user.getRole() != null && user.getRole().getPermissions() != null) {
             user.getRole().getPermissions().size();
@@ -28,7 +34,9 @@ public class CustomUserDetailsService implements UserDetailsService {
             .map(p -> new SimpleGrantedAuthority(p.getName()))
             .collect(Collectors.toList());
 
+        boolean accountNonLocked = user.getLockoutEndsAt() == null || !user.getLockoutEndsAt().after(new Date());
+
         return new org.springframework.security.core.userdetails.User(
-            user.getUsername(), user.getPassword(), user.isActive(), true, true, true, authorities);
+            user.getUsername(), user.getPassword(), user.isActive(), true, true, accountNonLocked, authorities);
     }
 }

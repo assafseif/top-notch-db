@@ -21,18 +21,19 @@ public class CategoryTileServiceImpl implements CategoryTileService {
 
     @Override
     public CategoryTile createOrUpdateCategoryTile(CategoryTileRequest request) {
-        CategoryTile tile = null;
-        // Try to update by ID if present, else by name
-        if (request.getId() != null) {
-            tile = categoryTileRepository.findById(request.getId()).orElse(null);
+        if (request == null) {
+            throw new IllegalArgumentException("Category tile details are required.");
         }
-        if (tile == null && request.getName() != null) {
-            List<CategoryTile> all = categoryTileRepository.findAll();
-            tile = all.stream().filter(t -> request.getName().equals(t.getName())).findFirst().orElse(null);
+
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Category tile name is required.");
         }
-        if (tile == null) {
-            tile = new CategoryTile();
-        }
+
+        CategoryTile tile = request.getId() != null
+                ? categoryTileRepository.findById(request.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Category tile not found."))
+                : new CategoryTile();
+
         tile.setName(request.getName());
         tile.setLink(request.getLink());
         // Convert base64 image to Image entity (accept both data URL and raw base64)

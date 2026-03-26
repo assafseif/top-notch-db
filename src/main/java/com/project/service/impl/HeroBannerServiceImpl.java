@@ -28,18 +28,18 @@ public class HeroBannerServiceImpl implements HeroBannerService {
     @Override
     @Transactional
     public HeroBanner createOrUpdateHeroBanner(HeroBannerRequest request) {
-        HeroBanner banner = null;
-        // Try to update by ID if present, else by title
-        if (request.getId() != null) {
-            banner = heroBannerRepository.findById(request.getId()).orElse(null);
+        if (request == null) {
+            throw new IllegalArgumentException("Hero banner details are required.");
         }
-        if (banner == null && request.getTitle() != null) {
-            List<HeroBanner> all = heroBannerRepository.findAll();
-            banner = all.stream().filter(b -> request.getTitle().equals(b.getTitle())).findFirst().orElse(null);
+        if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+            throw new IllegalArgumentException("Hero banner title is required.");
         }
-        if (banner == null) {
-            banner = new HeroBanner();
-        }
+
+        HeroBanner banner = request.getId() != null
+                ? heroBannerRepository.findById(request.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Hero banner not found."))
+                : new HeroBanner();
+
         List<Image> imgs = new ArrayList<>();
         if (request.getImagesBase64() != null) {
             for (String base64 : request.getImagesBase64()) {

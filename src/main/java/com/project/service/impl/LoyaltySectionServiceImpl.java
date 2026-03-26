@@ -18,18 +18,18 @@ public class LoyaltySectionServiceImpl implements LoyaltySectionService {
 
     @Override
     public LoyaltySection createOrUpdateLoyaltySection(LoyaltySectionRequest request) {
-        LoyaltySection section = null;
-        // Try to update by ID if present, else by heading
-        if (request.getId() != null) {
-            section = loyaltySectionRepository.findById(request.getId()).orElse(null);
+        if (request == null) {
+            throw new IllegalArgumentException("Loyalty section details are required.");
         }
-        if (section == null && request.getHeading() != null) {
-            List<LoyaltySection> all = loyaltySectionRepository.findAll();
-            section = all.stream().filter(s -> request.getHeading().equals(s.getHeading())).findFirst().orElse(null);
+        if (request.getHeading() == null || request.getHeading().trim().isEmpty()) {
+            throw new IllegalArgumentException("Loyalty section heading is required.");
         }
-        if (section == null) {
-            section = new LoyaltySection();
-        }
+
+        LoyaltySection section = request.getId() != null
+                ? loyaltySectionRepository.findById(request.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Loyalty section not found."))
+                : new LoyaltySection();
+
         section.setHeading(request.getHeading());
         section.setButtonText(request.getButtonText());
         section.setDescription(request.getDescription());

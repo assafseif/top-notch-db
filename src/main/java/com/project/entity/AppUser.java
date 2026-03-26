@@ -38,5 +38,12 @@ public class AppUser {
 
     @Column(nullable = false)
     @Builder.Default
+    private int failedLoginAttempts = 0;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date lockoutEndsAt;
+
+    @Column(nullable = false)
+    @Builder.Default
     private Date createdAt = new Date();
 }

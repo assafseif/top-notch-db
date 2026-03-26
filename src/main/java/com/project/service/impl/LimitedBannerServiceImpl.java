@@ -21,18 +21,18 @@ public class LimitedBannerServiceImpl implements LimitedBannerService {
 
     @Override
     public LimitedBanner createOrUpdateLimitedBanner(LimitedBannerRequest request) {
-        LimitedBanner banner = null;
-        // Try to update by ID if present, else by title
-        if (request.getId() != null) {
-            banner = limitedBannerRepository.findById(request.getId()).orElse(null);
+        if (request == null) {
+            throw new IllegalArgumentException("Limited banner details are required.");
         }
-        if (banner == null && request.getTitle() != null) {
-            List<LimitedBanner> all = limitedBannerRepository.findAll();
-            banner = all.stream().filter(b -> request.getTitle().equals(b.getTitle())).findFirst().orElse(null);
+        if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+            throw new IllegalArgumentException("Limited banner title is required.");
         }
-        if (banner == null) {
-            banner = new LimitedBanner();
-        }
+
+        LimitedBanner banner = request.getId() != null
+                ? limitedBannerRepository.findById(request.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Limited banner not found."))
+                : new LimitedBanner();
+
         banner.setBadge(request.getBadge());
         banner.setTitle(request.getTitle());
         banner.setDescription(request.getDescription());

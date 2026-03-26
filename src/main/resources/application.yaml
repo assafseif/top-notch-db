@@ -24,6 +24,15 @@ jwt:
 app:
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://109.205.180.47:89}
+  security:
+    auth:
+      max-failed-attempts: ${APP_SECURITY_AUTH_MAX_FAILED_ATTEMPTS:5}
+      lockout-minutes: ${APP_SECURITY_AUTH_LOCKOUT_MINUTES:15}
+    rate-limit:
+      requests: ${APP_SECURITY_RATE_LIMIT_REQUESTS:120}
+      window-seconds: ${APP_SECURITY_RATE_LIMIT_WINDOW_SECONDS:60}
+    bulkhead:
+      max-concurrent-requests: ${APP_SECURITY_BULKHEAD_MAX_CONCURRENT_REQUESTS:100}
 
 # NOTE: For local development it is OK to set trustServerCertificate=true (accept self-signed certs).
 # For production, import the SQL Server certificate into the JVM truststore and do NOT use trustServerCertificate=true.

@@ -43,7 +43,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (authHeader == null) {
             logger.warn("Authorization header is missing");
         } else {
-            logger.info("Authorization header found: {}", authHeader);
+            logger.info("Authorization header found");
         }
 
         // Step 2: Extract JWT
