@@ -45,11 +45,12 @@ public class StoreProductController {
             @RequestParam(name = "gender", required = false) List<String> genders,
             @RequestParam(name = "brand", required = false) List<String> brands,
             @RequestParam(name = "size", required = false) List<String> sizes,
-            @RequestParam(name = "color", required = false) List<String> colors
+            @RequestParam(name = "color", required = false) List<String> colors,
+            @RequestParam(name = "feature", required = false) List<String> features
     ) {
         logger.info("GET /api/store/products - start categoryId={} sortBy={}", categoryId, sortBy);
         try {
-            return productService.getStoreProducts(categoryId, sortBy, genders, brands, sizes, colors, 0, Integer.MAX_VALUE).getContent();
+            return productService.getStoreProducts(categoryId, sortBy, genders, brands, sizes, colors, features, 0, Integer.MAX_VALUE).getContent();
         } finally {
             logger.debug("GET /api/store/products - end");
         }
@@ -63,13 +64,14 @@ public class StoreProductController {
             @RequestParam(name = "brand", required = false) List<String> brands,
             @RequestParam(name = "size", required = false) List<String> sizes,
             @RequestParam(name = "color", required = false) List<String> colors,
+            @RequestParam(name = "feature", required = false) List<String> features,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(name = "pageSize", required = false) Integer pageSize
     ) {
         int resolvedPageSize = storeConfigurationService.resolvePageSize(pageSize);
         logger.info("GET /api/store/products/paged - start categoryId={} sortBy={} page={} size={}", categoryId, sortBy, page, resolvedPageSize);
         try {
-            return productService.getStoreProducts(categoryId, sortBy, genders, brands, sizes, colors, page, resolvedPageSize);
+            return productService.getStoreProducts(categoryId, sortBy, genders, brands, sizes, colors, features, page, resolvedPageSize);
         } finally {
             logger.debug("GET /api/store/products/paged - end");
         }

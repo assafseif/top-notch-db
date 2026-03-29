@@ -53,6 +53,9 @@ import java.util.TreeSet;
 @Service
 public class ProductServiceImpl implements ProductService {
     private static final Logger logger = LoggerFactory.getLogger(ProductServiceImpl.class);
+    private static final String OTHER_FILTER_VALUE = "other";
+    private static final List<String> STANDARD_GENDERS = List.of("men", "women", "unisex", "kids");
+    private static final List<String> STORE_FEATURE_OPTIONS = List.of("sale", "new-arrival", "limited-edition", "bestseller");
 
     @Autowired
     private ProductRepository productRepository;
@@ -85,13 +88,13 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public Page<ProductDto> getAllProductsWithImagesPaged(int page, int size) {
-        return getStoreProducts(null, "newest", null, null, null, null, page, size);
+        return getStoreProducts(null, "newest", null, null, null, null, null, page, size);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ProductDto> getProductsByCategoryIdPaged(Long categoryId, int page, int size) {
-        return getStoreProducts(categoryId, "newest", null, null, null, null, page, size);
+        return getStoreProducts(categoryId, "newest", null, null, null, null, null, page, size);
     }
 
     @Override
@@ -131,6 +134,7 @@ public class ProductServiceImpl implements ProductService {
             validateProductRequest(req, true);
             Product product = new Product();
             product.setName(req.getName());
+            product.setBarcode(normalizeNullableText(req.getBarcode()));
             product.setPrice(req.getPrice() != null ? req.getPrice() : 0.0);
             product.setOriginalPrice(req.getOriginalPrice());
             product.setDescription(req.getDescription());
@@ -212,6 +216,9 @@ public class ProductServiceImpl implements ProductService {
             Product product = productRepository.findById(id)
                     .orElseThrow(() -> new NoSuchElementException("Product not found."));
             product.setName(req.getName() != null ? req.getName() : product.getName());
+            if (req.getBarcode() != null) {
+                product.setBarcode(normalizeNullableText(req.getBarcode()));
+            }
             product.setPrice(req.getPrice() != null ? req.getPrice() : product.getPrice());
             product.setOriginalPrice(req.getOriginalPrice() != null ? req.getOriginalPrice() : product.getOriginalPrice());
             product.setDescription(req.getDescription() != null ? req.getDescription() : product.getDescription());
@@ -333,7 +340,7 @@ public class ProductServiceImpl implements ProductService {
     public List<ProductDto> getAllProductsWithImages() {
         logger.info("getAllProductsWithImages - start");
         try {
-            List<ProductDto> dtos = getStoreProducts(null, "newest", null, null, null, null, 0, Integer.MAX_VALUE).getContent();
+            List<ProductDto> dtos = getStoreProducts(null, "newest", null, null, null, null, null, 0, Integer.MAX_VALUE).getContent();
             logger.info("getAllProductsWithImages - returning {} items", dtos.size());
             return dtos;
         } catch (Exception e) {
@@ -371,7 +378,7 @@ public class ProductServiceImpl implements ProductService {
     public List<com.project.dto.ProductDto> getProductsByCategoryId(Long categoryId) {
         logger.info("getProductsByCategoryId - start categoryId={}", categoryId);
         try {
-            List<ProductDto> dtos = getStoreProducts(categoryId, "newest", null, null, null, null, 0, Integer.MAX_VALUE).getContent();
+            List<ProductDto> dtos = getStoreProducts(categoryId, "newest", null, null, null, null, null, 0, Integer.MAX_VALUE).getContent();
             logger.info("getProductsByCategoryId - returning {} items for categoryId={}", dtos.size(), categoryId);
             return dtos;
         } catch (Exception e) {
@@ -384,9 +391,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductDto> getStoreProducts(Long categoryId, String sortBy, List<String> genders, List<String> brands, List<String> sizes, List<String> colors, int page, int size) {
+    public Page<ProductDto> getStoreProducts(Long categoryId, String sortBy, List<String> genders, List<String> brands, List<String> sizes, List<String> colors, List<String> features, int page, int size) {
         logger.info("getStoreProducts - start categoryId={} sortBy={} page={} size={}", categoryId, sortBy, page, size);
-        return queryProducts(categoryId, null, sortBy, genders, brands, sizes, colors, page, size);
+        return queryProducts(categoryId, null, sortBy, genders, brands, sizes, colors, features, page, size);
     }
 
     @Override
@@ -399,12 +406,32 @@ public class ProductServiceImpl implements ProductService {
         Set<String> brands = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         Set<String> sizes = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         Set<String> colors = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        boolean hasOtherGender = false;
+        boolean hasOtherBrand = false;
 
         for (Product product : products) {
-            addIfPresent(genders, product.getGender());
-            addIfPresent(brands, product.getBrand() != null ? product.getBrand().getName() : null);
+            if (isOtherGender(product.getGender())) {
+                hasOtherGender = true;
+            } else {
+                addIfPresent(genders, product.getGender());
+            }
+
+            String brandName = product.getBrand() != null ? product.getBrand().getName() : null;
+            if (brandName == null || brandName.trim().isEmpty()) {
+                hasOtherBrand = true;
+            } else {
+                addIfPresent(brands, brandName);
+            }
+
             collectValues(sizes, product.getSizes() == null ? List.of() : product.getSizes().stream().map(Size::getValue).toList());
             collectValues(colors, product.getColors() == null ? List.of() : product.getColors().stream().map(Color::getValue).toList());
+        }
+
+        if (hasOtherGender) {
+            genders.add(OTHER_FILTER_VALUE);
+        }
+        if (hasOtherBrand) {
+            brands.add(OTHER_FILTER_VALUE);
         }
 
         return new StoreProductFiltersDto(
@@ -412,6 +439,7 @@ public class ProductServiceImpl implements ProductService {
                 new ArrayList<>(brands),
                 new ArrayList<>(sizes),
                 new ArrayList<>(colors),
+                STORE_FEATURE_OPTIONS,
                 List.of("newest", "popular", "rating", "price-low", "price-high")
         );
     }
@@ -420,17 +448,18 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public Page<ProductDto> getAdminProducts(Long categoryId, String search, String sortBy, int page, int size) {
         logger.info("getAdminProducts - start categoryId={} search={} sortBy={} page={} size={}", categoryId, search, sortBy, page, size);
-        return queryProducts(categoryId, search, sortBy, null, null, null, null, page, size);
+        return queryProducts(categoryId, search, sortBy, null, null, null, null, null, page, size);
     }
 
-    private Page<ProductDto> queryProducts(Long categoryId, String search, String sortBy, List<String> genders, List<String> brands, List<String> sizes, List<String> colors, int page, int size) {
+    private Page<ProductDto> queryProducts(Long categoryId, String search, String sortBy, List<String> genders, List<String> brands, List<String> sizes, List<String> colors, List<String> features, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, resolveSort(sortBy));
         Specification<Product> specification = Specification.where(hasCategory(categoryId))
                 .and(matchesSearch(search))
-                .and(matchesScalarValues("gender", genders))
-            .and(matchesRelationValues("brand", "name", brands))
+                .and(matchesGenderValues(genders))
+                .and(matchesBrandValues(brands))
                 .and(matchesCollectionValues("sizes", "value", sizes))
-                .and(matchesCollectionValues("colors", "value", colors));
+                .and(matchesCollectionValues("colors", "value", colors))
+                .and(matchesFeatureFlags(features));
         Page<Product> productPage = productRepository.findAll(specification, pageable);
         List<ProductDto> dtos = new ArrayList<>();
         for (Product product : productPage.getContent()) {
@@ -454,13 +483,23 @@ public class ProductServiceImpl implements ProductService {
                 return criteriaBuilder.conjunction();
             }
 
+            if (query != null) {
+                query.distinct(true);
+            }
+
             String pattern = "%" + search.trim().toLowerCase(Locale.ROOT) + "%";
             Join<Product, Category> categoryJoin = root.join("category", JoinType.LEFT);
+            Join<Product, Brand> brandJoin = root.join("brand", JoinType.LEFT);
+            Join<Product, Tag> tagJoin = root.join("tags", JoinType.LEFT);
+            Join<Product, Color> colorJoin = root.join("colors", JoinType.LEFT);
             return criteriaBuilder.or(
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), pattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("barcode")), pattern),
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), pattern),
                     criteriaBuilder.like(criteriaBuilder.lower(categoryJoin.get("name")), pattern),
-                    criteriaBuilder.like(criteriaBuilder.lower(root.join("brand", JoinType.LEFT).get("name")), pattern)
+                    criteriaBuilder.like(criteriaBuilder.lower(brandJoin.get("name")), pattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(tagJoin.get("name")), pattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(colorJoin.get("value")), pattern)
             );
         };
     }
@@ -472,6 +511,60 @@ public class ProductServiceImpl implements ProductService {
                 return criteriaBuilder.conjunction();
             }
             return criteriaBuilder.lower(root.get(fieldName)).in(normalizedValues);
+        };
+    }
+
+    private Specification<Product> matchesGenderValues(List<String> rawValues) {
+        List<String> normalizedValues = new ArrayList<>(normalizeFilterValues(rawValues));
+        boolean includeOther = normalizedValues.remove(OTHER_FILTER_VALUE);
+
+        return (root, query, criteriaBuilder) -> {
+            if (normalizedValues.isEmpty() && !includeOther) {
+                return criteriaBuilder.conjunction();
+            }
+
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+            if (!normalizedValues.isEmpty()) {
+                predicates.add(criteriaBuilder.lower(root.get("gender")).in(normalizedValues));
+            }
+
+            if (includeOther) {
+                jakarta.persistence.criteria.Expression<String> loweredGender = criteriaBuilder.lower(root.get("gender"));
+                predicates.add(criteriaBuilder.or(
+                        criteriaBuilder.isNull(root.get("gender")),
+                        criteriaBuilder.equal(loweredGender, ""),
+                        criteriaBuilder.not(loweredGender.in(STANDARD_GENDERS))
+                ));
+            }
+
+            return predicates.size() == 1 ? predicates.get(0) : criteriaBuilder.or(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+    }
+
+    private Specification<Product> matchesBrandValues(List<String> rawValues) {
+        List<String> normalizedValues = new ArrayList<>(normalizeFilterValues(rawValues));
+        boolean includeOther = normalizedValues.remove(OTHER_FILTER_VALUE);
+
+        return (root, query, criteriaBuilder) -> {
+            if (normalizedValues.isEmpty() && !includeOther) {
+                return criteriaBuilder.conjunction();
+            }
+
+            Join<Product, Brand> brandJoin = root.join("brand", JoinType.LEFT);
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+            if (!normalizedValues.isEmpty()) {
+                predicates.add(criteriaBuilder.lower(brandJoin.get("name")).in(normalizedValues));
+            }
+
+            if (includeOther) {
+                predicates.add(criteriaBuilder.or(
+                        criteriaBuilder.isNull(root.get("brand")),
+                        criteriaBuilder.isNull(brandJoin.get("name")),
+                        criteriaBuilder.equal(criteriaBuilder.lower(brandJoin.get("name")), "")
+                ));
+            }
+
+            return predicates.size() == 1 ? predicates.get(0) : criteriaBuilder.or(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
         };
     }
 
@@ -500,6 +593,37 @@ public class ProductServiceImpl implements ProductService {
         };
     }
 
+    private Specification<Product> matchesFeatureFlags(List<String> rawValues) {
+        List<String> normalizedValues = normalizeFilterValues(rawValues);
+
+        return (root, query, criteriaBuilder) -> {
+            if (normalizedValues.isEmpty()) {
+                return criteriaBuilder.conjunction();
+            }
+
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+            for (String value : normalizedValues) {
+                switch (value) {
+                    case "sale" -> predicates.add(criteriaBuilder.and(
+                            criteriaBuilder.isNotNull(root.get("originalPrice")),
+                            criteriaBuilder.greaterThan(root.get("originalPrice"), root.get("price"))
+                    ));
+                    case "new-arrival" -> predicates.add(criteriaBuilder.isTrue(root.get("isNew")));
+                    case "limited-edition" -> predicates.add(criteriaBuilder.isTrue(root.get("isLimited")));
+                    case "bestseller" -> predicates.add(criteriaBuilder.isTrue(root.get("isBestseller")));
+                    default -> {
+                    }
+                }
+            }
+
+            if (predicates.isEmpty()) {
+                return criteriaBuilder.conjunction();
+            }
+
+            return predicates.size() == 1 ? predicates.get(0) : criteriaBuilder.or(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+    }
+
     private Sort resolveSort(String sortBy) {
         String normalizedSort = sortBy == null ? "newest" : sortBy.trim().toLowerCase(Locale.ROOT);
         return switch (normalizedSort) {
@@ -511,10 +635,19 @@ public class ProductServiceImpl implements ProductService {
         };
     }
 
+    private boolean isOtherGender(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return true;
+        }
+
+        return !STANDARD_GENDERS.contains(value.trim().toLowerCase(Locale.ROOT));
+    }
+
     private ProductDto mapToDto(Product p) {
         ProductDto dto = new ProductDto();
         dto.setId(p.getId());
         dto.setName(p.getName());
+        dto.setBarcode(p.getBarcode());
         dto.setPrice(p.getPrice());
         dto.setOriginalPrice(p.getOriginalPrice());
         dto.setDescription(p.getDescription());
@@ -642,12 +775,24 @@ public class ProductServiceImpl implements ProductService {
         if (!creating && req.getBrand() != null && isBlank(req.getBrand())) {
             throw new IllegalArgumentException("Product brand cannot be blank.");
         }
+        if (req.getBarcode() != null && req.getBarcode().trim().isEmpty()) {
+            throw new IllegalArgumentException("Product barcode cannot be blank.");
+        }
         if (req.getCategoryId() == null && (req.getCategoryName() == null || req.getCategoryName().trim().isEmpty())) {
             throw new IllegalArgumentException("Product category is required.");
         }
         if (creating && (req.getImagesBase64() == null || req.getImagesBase64().isEmpty())) {
             throw new IllegalArgumentException("At least one product image is required.");
         }
+    }
+
+    private String normalizeNullableText(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     // helpers to resolve or create tag/size/color entities

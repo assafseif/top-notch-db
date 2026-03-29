@@ -253,6 +253,7 @@
             <column name="name" type="NVARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
+            <column name="barcode" type="NVARCHAR(255)"/>
             <column name="quantity" type="INT">
             </column>
             <column name="category_id" type="BIGINT"/>

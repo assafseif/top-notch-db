@@ -16,5 +16,6 @@ public class StoreProductFiltersDto {
     private List<String> brands;
     private List<String> sizes;
     private List<String> colors;
+    private List<String> features;
     private List<String> sortOptions;
 }

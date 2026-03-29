@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="014-add-product-barcode-column" author="copilot">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="product" schemaName="dbo" columnName="barcode"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="product" schemaName="dbo">
+            <column name="barcode" type="NVARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>

@@ -24,17 +24,20 @@ public class Product {
     @Column(nullable = false)
     private String name;
 
-        private Integer quantity;
+    @Column(name = "barcode")
+    private String barcode;
+
+    private Integer quantity;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     @ToString.Exclude
     private Category category;
 
-        @ManyToOne(fetch = FetchType.LAZY)
-        @JoinColumn(name = "brand_id")
-        @ToString.Exclude
-        private Brand brand;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "brand_id")
+    @ToString.Exclude
+    private Brand brand;
 
     @Column(nullable = false)
     private double price;
@@ -60,8 +63,8 @@ public class Product {
     @Column(length = 2000)
     private String description;
 
-        @Column(nullable = false)
-        private String gender;
+    @Column(nullable = false)
+    private String gender;
 
     private double rating;
     private int reviews;

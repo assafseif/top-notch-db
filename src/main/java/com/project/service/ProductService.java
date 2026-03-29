@@ -23,7 +23,7 @@ public interface ProductService {
     List<ProductDto> getAllProductsWithImages();
     ProductDto getProductWithImages(Long id);
     List<ProductDto> getProductsByCategoryId(Long categoryId);
-    Page<ProductDto> getStoreProducts(Long categoryId, String sortBy, List<String> genders, List<String> brands, List<String> sizes, List<String> colors, int page, int size);
+    Page<ProductDto> getStoreProducts(Long categoryId, String sortBy, List<String> genders, List<String> brands, List<String> sizes, List<String> colors, List<String> features, int page, int size);
     StoreProductFiltersDto getStoreProductFilters(Long categoryId);
     Page<ProductDto> getAdminProducts(Long categoryId, String search, String sortBy, int page, int size);
 

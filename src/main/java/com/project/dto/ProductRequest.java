@@ -10,6 +10,7 @@ import lombok.*;
 @ToString
 public class ProductRequest {
     private String name;
+    private String barcode;
     private Double price;
     private Double originalPrice;
     private String categoryName;

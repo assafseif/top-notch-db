@@ -11,6 +11,7 @@ import java.util.List;
 public class ProductDto {
     private Long id;
     private String name;
+    private String barcode;
     private double price;
     private Double originalPrice;
     private String description;

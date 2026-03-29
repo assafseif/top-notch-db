@@ -19,4 +19,5 @@
     <include file="db/changelog/schema/011-store-configuration-schema.xml"/>
     <include file="db/changelog/seeder/012-store-configuration-seed.xml"/>
     <include file="db/changelog/schema/013-product-quantity-optional.xml"/>
+    <include file="db/changelog/schema/014-product-barcode.xml"/>
 </databaseChangeLog>
