@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="012-expand-permission-seed" author="copilot">
+        <sql>
+            UPDATE permission_groups SET label = 'Cart Orders' WHERE name = 'orders';
+            UPDATE permissions SET label = 'View Cart Orders' WHERE name = 'orders.view';
+            UPDATE permissions SET label = 'Manage Cart Orders' WHERE name = 'orders.manage';
+            UPDATE permissions SET label = 'View Wholesale' WHERE name = 'wholesale.view';
+            UPDATE permissions SET label = 'Manage Wholesale' WHERE name = 'wholesale.manage';
+
+            IF NOT EXISTS (SELECT 1 FROM permission_groups WHERE name = 'categories')
+                INSERT INTO permission_groups (name, label) VALUES ('categories', 'Categories');
+
+            IF NOT EXISTS (SELECT 1 FROM permission_groups WHERE name = 'brands')
+                INSERT INTO permission_groups (name, label) VALUES ('brands', 'Brands');
+
+            IF NOT EXISTS (SELECT 1 FROM permissions WHERE name = 'categories.view')
+                INSERT INTO permissions (name, label, group_name, group_id)
+                VALUES ('categories.view', 'View Categories', 'categories', (SELECT id FROM permission_groups WHERE name = 'categories'));
+
+            IF NOT EXISTS (SELECT 1 FROM permissions WHERE name = 'categories.create')
+                INSERT INTO permissions (name, label, group_name, group_id)
+                VALUES ('categories.create', 'Create Categories', 'categories', (SELECT id FROM permission_groups WHERE name = 'categories'));
+
+            IF NOT EXISTS (SELECT 1 FROM permissions WHERE name = 'categories.edit')
+                INSERT INTO permissions (name, label, group_name, group_id)
+                VALUES ('categories.edit', 'Edit Categories', 'categories', (SELECT id FROM permission_groups WHERE name = 'categories'));
+
+            IF NOT EXISTS (SELECT 1 FROM permissions WHERE name = 'brands.view')
+                INSERT INTO permissions (name, label, group_name, group_id)
+                VALUES ('brands.view', 'View Brands', 'brands', (SELECT id FROM permission_groups WHERE name = 'brands'));
+
+            IF NOT EXISTS (SELECT 1 FROM permissions WHERE name = 'brands.create')
+                INSERT INTO permissions (name, label, group_name, group_id)
+                VALUES ('brands.create', 'Create Brands', 'brands', (SELECT id FROM permission_groups WHERE name = 'brands'));
+
+            IF NOT EXISTS (SELECT 1 FROM permissions WHERE name = 'brands.edit')
+                INSERT INTO permissions (name, label, group_name, group_id)
+                VALUES ('brands.edit', 'Edit Brands', 'brands', (SELECT id FROM permission_groups WHERE name = 'brands'));
+
+            IF NOT EXISTS (
+                SELECT 1 FROM role_permissions rp
+                INNER JOIN roles r ON rp.role_id = r.id
+                INNER JOIN permissions p ON rp.permission_id = p.id
+                WHERE r.name = 'Super Admin' AND p.name = 'categories.view'
+            )
+                INSERT INTO role_permissions (role_id, permission_id)
+                VALUES ((SELECT id FROM roles WHERE name = 'Super Admin'), (SELECT id FROM permissions WHERE name = 'categories.view'));
+
+            IF NOT EXISTS (
+                SELECT 1 FROM role_permissions rp
+                INNER JOIN roles r ON rp.role_id = r.id
+                INNER JOIN permissions p ON rp.permission_id = p.id
+                WHERE r.name = 'Super Admin' AND p.name = 'categories.create'
+            )
+                INSERT INTO role_permissions (role_id, permission_id)
+                VALUES ((SELECT id FROM roles WHERE name = 'Super Admin'), (SELECT id FROM permissions WHERE name = 'categories.create'));
+
+            IF NOT EXISTS (
+                SELECT 1 FROM role_permissions rp
+                INNER JOIN roles r ON rp.role_id = r.id
+                INNER JOIN permissions p ON rp.permission_id = p.id
+                WHERE r.name = 'Super Admin' AND p.name = 'categories.edit'
+            )
+                INSERT INTO role_permissions (role_id, permission_id)
+                VALUES ((SELECT id FROM roles WHERE name = 'Super Admin'), (SELECT id FROM permissions WHERE name = 'categories.edit'));
+
+            IF NOT EXISTS (
+                SELECT 1 FROM role_permissions rp
+                INNER JOIN roles r ON rp.role_id = r.id
+                INNER JOIN permissions p ON rp.permission_id = p.id
+                WHERE r.name = 'Super Admin' AND p.name = 'brands.view'
+            )
+                INSERT INTO role_permissions (role_id, permission_id)
+                VALUES ((SELECT id FROM roles WHERE name = 'Super Admin'), (SELECT id FROM permissions WHERE name = 'brands.view'));
+
+            IF NOT EXISTS (
+                SELECT 1 FROM role_permissions rp
+                INNER JOIN roles r ON rp.role_id = r.id
+                INNER JOIN permissions p ON rp.permission_id = p.id
+                WHERE r.name = 'Super Admin' AND p.name = 'brands.create'
+            )
+                INSERT INTO role_permissions (role_id, permission_id)
+                VALUES ((SELECT id FROM roles WHERE name = 'Super Admin'), (SELECT id FROM permissions WHERE name = 'brands.create'));
+
+            IF NOT EXISTS (
+                SELECT 1 FROM role_permissions rp
+                INNER JOIN roles r ON rp.role_id = r.id
+                INNER JOIN permissions p ON rp.permission_id = p.id
+                WHERE r.name = 'Super Admin' AND p.name = 'brands.edit'
+            )
+                INSERT INTO role_permissions (role_id, permission_id)
+                VALUES ((SELECT id FROM roles WHERE name = 'Super Admin'), (SELECT id FROM permissions WHERE name = 'brands.edit'));
+        </sql>
+    </changeSet>
+</databaseChangeLog>

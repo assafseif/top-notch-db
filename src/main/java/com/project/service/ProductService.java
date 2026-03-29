@@ -3,6 +3,7 @@ package com.project.service;
 import com.project.dto.ProductRequest;
 import com.project.dto.ProductCategoryDto;
 import com.project.dto.ProductDto;
+import com.project.dto.StoreProductFiltersDto;
 import com.project.entity.Product;
 import org.springframework.data.domain.Page;
 
@@ -22,7 +23,8 @@ public interface ProductService {
     List<ProductDto> getAllProductsWithImages();
     ProductDto getProductWithImages(Long id);
     List<ProductDto> getProductsByCategoryId(Long categoryId);
-    Page<ProductDto> getStoreProducts(Long categoryId, String sortBy, int page, int size);
+    Page<ProductDto> getStoreProducts(Long categoryId, String sortBy, List<String> genders, List<String> brands, List<String> sizes, List<String> colors, int page, int size);
+    StoreProductFiltersDto getStoreProductFilters(Long categoryId);
     Page<ProductDto> getAdminProducts(Long categoryId, String search, String sortBy, int page, int size);
 
     // PAGINATED versions

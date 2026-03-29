@@ -1,5 +1,6 @@
 package com.project.controller;
 
+import com.project.dto.ApiResponse;
 import com.project.dto.PermissionDto;
 import com.project.service.PermissionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,17 +19,18 @@ public class PermissionController {
     }
 
     @PostMapping
-    public PermissionDto create(@RequestBody PermissionDto permission) {
-        return permissionService.create(permission);
+    public ApiResponse<PermissionDto> create(@RequestBody PermissionDto permission) {
+        return ApiResponse.of("Permission created successfully.", permissionService.create(permission));
     }
 
     @PutMapping("/{id}")
-    public PermissionDto update(@PathVariable Long id, @RequestBody PermissionDto permission) {
-        return permissionService.update(id, permission);
+    public ApiResponse<PermissionDto> update(@PathVariable Long id, @RequestBody PermissionDto permission) {
+        return ApiResponse.of("Permission updated successfully.", permissionService.update(id, permission));
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
+    public ApiResponse<Void> delete(@PathVariable Long id) {
         permissionService.delete(id);
+        return ApiResponse.of("Permission deleted successfully.");
     }
 }

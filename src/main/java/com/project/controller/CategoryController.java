@@ -1,10 +1,12 @@
 package com.project.controller;
 
+import com.project.dto.ApiResponse;
 import com.project.entity.Category;
 import com.project.service.CategoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,30 +40,34 @@ public class CategoryController {
     }
 
     @PostMapping
-    public Category createCategory(@RequestBody Category category) {
+    @PreAuthorize("hasAuthority('categories.create')")
+    public ApiResponse<Category> createCategory(@RequestBody Category category) {
         logger.info("POST /api/categories - start - name={}", category != null ? category.getName() : null);
         try {
-            return categoryService.createCategory(category);
+            return ApiResponse.of("Category created successfully.", categoryService.createCategory(category));
         } finally {
             logger.debug("POST /api/categories - end");
         }
     }
 
     @PutMapping("/{id}")
-    public Category updateCategory(@PathVariable Long id, @RequestBody Category category) {
+    @PreAuthorize("hasAuthority('categories.edit')")
+    public ApiResponse<Category> updateCategory(@PathVariable Long id, @RequestBody Category category) {
         logger.info("PUT /api/categories/{} - start - name={}", id, category != null ? category.getName() : null);
         try {
-            return categoryService.updateCategory(id, category);
+            return ApiResponse.of("Category updated successfully.", categoryService.updateCategory(id, category));
         } finally {
             logger.debug("PUT /api/categories/{} - end", id);
         }
     }
 
     @DeleteMapping("/{id}")
-    public void deleteCategory(@PathVariable Long id) {
+    @PreAuthorize("hasAuthority('categories.edit')")
+    public ApiResponse<Void> deleteCategory(@PathVariable Long id) {
         logger.info("DELETE /api/categories/{} - start", id);
         try {
             categoryService.deleteCategory(id);
+            return ApiResponse.of("Category deleted successfully.");
         } finally {
             logger.debug("DELETE /api/categories/{} - end", id);
         }

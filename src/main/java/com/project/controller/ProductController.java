@@ -5,10 +5,10 @@ import com.project.dto.ApiResponse;
 import com.project.dto.ProductDto;
 import com.project.dto.ProductRequest;
 import com.project.entity.Category;
-import com.project.entity.Product;
 import com.project.repository.CategoryRepository;
 import com.project.repository.ProductRepository;
 import com.project.service.ProductService;
+import com.project.service.StoreConfigurationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +28,9 @@ public class ProductController {
 
     @Autowired
     private ProductService productService;
+
+    @Autowired
+    private StoreConfigurationService storeConfigurationService;
 
 
     // Unpaged (legacy)
@@ -49,10 +52,11 @@ public class ProductController {
                                                 @RequestParam(required = false) String search,
                                                 @RequestParam(defaultValue = "newest") String sortBy,
                                                 @RequestParam(defaultValue = "0") int page,
-                                                @RequestParam(defaultValue = "10") int size) {
-        logger.info("GET /api/products/paged - start categoryId={} search={} sortBy={} page={} size={}", categoryId, search, sortBy, page, size);
+                                                @RequestParam(required = false) Integer size) {
+        int resolvedSize = storeConfigurationService.resolvePageSize(size);
+        logger.info("GET /api/products/paged - start categoryId={} search={} sortBy={} page={} size={}", categoryId, search, sortBy, page, resolvedSize);
         try {
-            return productService.getAdminProducts(categoryId, search, sortBy, page, size);
+            return productService.getAdminProducts(categoryId, search, sortBy, page, resolvedSize);
         } finally {
             logger.debug("GET /api/products/paged - end");
         }
@@ -71,10 +75,11 @@ public class ProductController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('products.create')")
-    public ApiResponse<Product> createProduct(@RequestBody ProductRequest req) {
+    public ApiResponse<ProductDto> createProduct(@RequestBody ProductRequest req) {
         logger.info("POST /api/products - start - name={}", req != null ? req.getName() : null);
         try {
-            return ApiResponse.of("Product created successfully.", productService.createProduct(req));
+            Long productId = productService.createProduct(req).getId();
+            return ApiResponse.of("Product created successfully.", productService.getProductWithImages(productId));
         } finally {
             logger.debug("POST /api/products - end");
         }
@@ -82,10 +87,11 @@ public class ProductController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('products.edit')")
-    public ApiResponse<Product> updateProduct(@PathVariable Long id, @RequestBody ProductRequest req) {
+    public ApiResponse<ProductDto> updateProduct(@PathVariable Long id, @RequestBody ProductRequest req) {
         logger.info("PUT /api/products/{} - start - name={}", id, req != null ? req.getName() : null);
         try {
-            return ApiResponse.of("Product updated successfully.", productService.updateProduct(id, req));
+            productService.updateProduct(id, req);
+            return ApiResponse.of("Product updated successfully.", productService.getProductWithImages(id));
         } finally {
             logger.debug("PUT /api/products/{} - end", id);
         }
@@ -121,10 +127,11 @@ public class ProductController {
     public Page<ProductDto> getProductsByCategoryPaged(@PathVariable Long categoryId,
                                                       @RequestParam(defaultValue = "newest") String sortBy,
                                                       @RequestParam(defaultValue = "0") int page,
-                                                      @RequestParam(defaultValue = "10") int size) {
-        logger.info("GET /api/products/category/{}/paged - start sortBy={} page={} size={}", categoryId, sortBy, page, size);
+                                                      @RequestParam(required = false) Integer size) {
+        int resolvedSize = storeConfigurationService.resolvePageSize(size);
+        logger.info("GET /api/products/category/{}/paged - start sortBy={} page={} size={}", categoryId, sortBy, page, resolvedSize);
         try {
-            return productService.getAdminProducts(categoryId, null, sortBy, page, size);
+            return productService.getAdminProducts(categoryId, null, sortBy, page, resolvedSize);
         } finally {
             logger.debug("GET /api/products/category/{}/paged - end", categoryId);
         }

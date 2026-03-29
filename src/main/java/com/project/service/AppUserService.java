@@ -9,6 +9,7 @@ public interface AppUserService {
     AppUserDto create(AppUserDto userDto);
     AppUserDto update(Long id, AppUserDto userDto);
     AppUserDto partialUpdate(Long id, AppUserDto userDto);
+    AppUserDto updatePassword(Long id, String password);
     void delete(Long id);
     List<AppUserDto> getAll();
     Page<AppUserDto> getAllPaged(int page, int size);

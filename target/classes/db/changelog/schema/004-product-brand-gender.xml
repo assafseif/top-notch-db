@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="004-add-product-brand-gender-columns" author="copilot">
+        <addColumn tableName="product" schemaName="dbo">
+            <column name="gender" type="NVARCHAR(50)" defaultValue="unisex">
+                <constraints nullable="false"/>
+            </column>
+            <column name="brand" type="NVARCHAR(255)" defaultValue="Top Notch">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="005-seed-product-brand-gender-values" author="copilot">
+        <update tableName="product" schemaName="dbo">
+            <column name="gender" value="men"/>
+            <column name="brand" value="Adidas"/>
+            <where>name in ('Footwear Product 1', 'Footwear Product 3', 'Training Product 2')</where>
+        </update>
+
+        <update tableName="product" schemaName="dbo">
+            <column name="gender" value="women"/>
+            <column name="brand" value="Nike"/>
+            <where>name in ('Footwear Product 2', 'Apparel Product 1', 'Equipment Product 1')</where>
+        </update>
+
+        <update tableName="product" schemaName="dbo">
+            <column name="gender" value="unisex"/>
+            <column name="brand" value="Puma"/>
+            <where>name in ('Accessories Product 1', 'Accessories Product 2', 'Equipment Product 2')</where>
+        </update>
+
+        <update tableName="product" schemaName="dbo">
+            <column name="gender" value="kids"/>
+            <column name="brand" value="Top Notch"/>
+            <where>name in ('Footwear Product 4', 'Footwear Product 5', 'Apparel Product 2', 'Training Product 1')</where>
+        </update>
+    </changeSet>
+</databaseChangeLog>

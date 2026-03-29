@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="001-create-security-tables" author="copilot">
+        <createTable tableName="roles">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_roles" nullable="false"/>
+            </column>
+            <column name="name" type="NVARCHAR(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_roles_name"/>
+            </column>
+            <column name="description" type="NVARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_system" type="BIT" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="permission_groups">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_permission_groups" nullable="false"/>
+            </column>
+            <column name="name" type="NVARCHAR(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_permission_groups_name"/>
+            </column>
+            <column name="label" type="NVARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="permissions">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_permissions" nullable="false"/>
+            </column>
+            <column name="name" type="NVARCHAR(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_permissions_name"/>
+            </column>
+            <column name="label" type="NVARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="group_name" type="NVARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="group_id" type="BIGINT"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="permissions"
+                                 baseColumnNames="group_id"
+                                 referencedTableName="permission_groups"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_permissions_group_id"/>
+
+        <createTable tableName="users">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_users" nullable="false"/>
+            </column>
+            <column name="username" type="NVARCHAR(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_users_username"/>
+            </column>
+            <column name="password" type="NVARCHAR(255)"/>
+            <column name="full_name" type="NVARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="email" type="NVARCHAR(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_users_email"/>
+            </column>
+            <column name="role_id" type="BIGINT"/>
+            <column name="is_active" type="BIT" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="failed_login_attempts" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="lockout_ends_at" type="DATETIME2"/>
+            <column name="created_at" type="DATETIME2" defaultValueComputed="SYSUTCDATETIME()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="users"
+                                 baseColumnNames="role_id"
+                                 referencedTableName="roles"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_users_role_id"/>
+
+        <createTable tableName="role_permissions">
+            <column name="role_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="permission_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey tableName="role_permissions"
+                       columnNames="role_id, permission_id"
+                       constraintName="pk_role_permissions"/>
+
+        <addForeignKeyConstraint baseTableName="role_permissions"
+                                 baseColumnNames="role_id"
+                                 referencedTableName="roles"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_role_permissions_role_id"/>
+
+        <addForeignKeyConstraint baseTableName="role_permissions"
+                                 baseColumnNames="permission_id"
+                                 referencedTableName="permissions"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_role_permissions_permission_id"/>
+    </changeSet>
+
+    <changeSet id="002-create-catalog-tables" author="copilot">
+        <createTable tableName="category" schemaName="dbo">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_category" nullable="false"/>
+            </column>
+            <column name="name" type="NVARCHAR(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_category_name"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="color" schemaName="dbo">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_color" nullable="false"/>
+            </column>
+            <column name="value" type="NVARCHAR(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_color_value"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="size" schemaName="dbo">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_size" nullable="false"/>
+            </column>
+            <column name="value" type="NVARCHAR(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_size_value"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="tag" schemaName="dbo">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_tag" nullable="false"/>
+            </column>
+            <column name="name" type="NVARCHAR(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_tag_name"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="hero_banner" schemaName="dbo">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_hero_banner" nullable="false"/>
+            </column>
+            <column name="subtitle" type="NVARCHAR(255)"/>
+            <column name="title" type="NVARCHAR(255)"/>
+            <column name="description" type="NVARCHAR(255)"/>
+            <column name="cta" type="NVARCHAR(255)"/>
+            <column name="link" type="NVARCHAR(255)"/>
+        </createTable>
+
+        <createTable tableName="image" schemaName="dbo">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_image" nullable="false"/>
+            </column>
+            <column name="filename" type="NVARCHAR(255)"/>
+            <column name="content_type" type="NVARCHAR(255)"/>
+            <column name="data" type="VARBINARY(MAX)"/>
+            <column name="hero_banner_id" type="BIGINT"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="image"
+                     baseTableSchemaName="dbo"
+                     baseColumnNames="hero_banner_id"
+                     referencedTableName="hero_banner"
+                     referencedTableSchemaName="dbo"
+                     referencedColumnNames="id"
+                     constraintName="fk_image_hero_banner_id"/>
+
+        <createTable tableName="limited_banner" schemaName="dbo">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_limited_banner" nullable="false"/>
+            </column>
+            <column name="image_id" type="BIGINT"/>
+            <column name="badge" type="NVARCHAR(255)"/>
+            <column name="title" type="NVARCHAR(255)"/>
+            <column name="description" type="NVARCHAR(255)"/>
+            <column name="cta" type="NVARCHAR(255)"/>
+            <column name="link" type="NVARCHAR(255)"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="limited_banner"
+                     baseTableSchemaName="dbo"
+                     baseColumnNames="image_id"
+                     referencedTableName="image"
+                     referencedTableSchemaName="dbo"
+                     referencedColumnNames="id"
+                     constraintName="fk_limited_banner_image_id"/>
+
+        <createTable tableName="category_tile" schemaName="dbo">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_category_tile" nullable="false"/>
+            </column>
+            <column name="name" type="NVARCHAR(255)"/>
+            <column name="link" type="NVARCHAR(255)"/>
+            <column name="image_id" type="BIGINT"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="category_tile"
+                     baseTableSchemaName="dbo"
+                     baseColumnNames="image_id"
+                     referencedTableName="image"
+                     referencedTableSchemaName="dbo"
+                     referencedColumnNames="id"
+                     constraintName="fk_category_tile_image_id"/>
+
+        <createTable tableName="loyalty_section" schemaName="dbo">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_loyalty_section" nullable="false"/>
+            </column>
+            <column name="heading" type="NVARCHAR(255)"/>
+            <column name="button_text" type="NVARCHAR(255)"/>
+            <column name="description" type="NVARCHAR(255)"/>
+        </createTable>
+
+        <createTable tableName="loyalty_perk" schemaName="dbo">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_loyalty_perk" nullable="false"/>
+            </column>
+            <column name="icon" type="NVARCHAR(255)"/>
+            <column name="title" type="NVARCHAR(255)"/>
+            <column name="description" type="NVARCHAR(255)"/>
+            <column name="loyalty_section_id" type="BIGINT"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="loyalty_perk"
+                     baseTableSchemaName="dbo"
+                     baseColumnNames="loyalty_section_id"
+                     referencedTableName="loyalty_section"
+                     referencedTableSchemaName="dbo"
+                     referencedColumnNames="id"
+                     constraintName="fk_loyalty_perk_section_id"/>
+    </changeSet>
+
+    <changeSet id="003-create-product-tables" author="copilot">
+        <createTable tableName="product" schemaName="dbo">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_product" nullable="false"/>
+            </column>
+            <column name="name" type="NVARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantity" type="INT">
+            </column>
+            <column name="category_id" type="BIGINT"/>
+            <column name="price" type="FLOAT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="original_price" type="FLOAT"/>
+            <column name="image" type="VARBINARY(MAX)"/>
+            <column name="description" type="NVARCHAR(2000)"/>
+            <column name="rating" type="FLOAT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reviews" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_new" type="BIT" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_limited" type="BIT" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_bestseller" type="BIT" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="product"
+                     baseTableSchemaName="dbo"
+                     baseColumnNames="category_id"
+                     referencedTableName="category"
+                     referencedTableSchemaName="dbo"
+                     referencedColumnNames="id"
+                     constraintName="fk_product_category_id"/>
+
+        <createTable tableName="product_images" schemaName="dbo">
+            <column name="product_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="image_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey tableName="product_images"
+                       schemaName="dbo"
+                       columnNames="product_id, image_id"
+                       constraintName="pk_product_images"/>
+
+        <addForeignKeyConstraint baseTableName="product_images"
+                                 baseColumnNames="product_id"
+                                 baseTableSchemaName="dbo"
+                                 referencedTableName="product"
+                                 referencedTableSchemaName="dbo"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_product_images_product_id"/>
+
+        <addForeignKeyConstraint baseTableName="product_images"
+                                 baseColumnNames="image_id"
+                                 baseTableSchemaName="dbo"
+                                 referencedTableName="image"
+                                 referencedTableSchemaName="dbo"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_product_images_image_id"/>
+
+        <createTable tableName="product_sizes" schemaName="dbo">
+            <column name="product_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="size_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey tableName="product_sizes"
+                       schemaName="dbo"
+                       columnNames="product_id, size_id"
+                       constraintName="pk_product_sizes"/>
+
+        <addForeignKeyConstraint baseTableName="product_sizes"
+                                 baseColumnNames="product_id"
+                                 baseTableSchemaName="dbo"
+                                 referencedTableName="product"
+                                 referencedTableSchemaName="dbo"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_product_sizes_product_id"/>
+
+        <addForeignKeyConstraint baseTableName="product_sizes"
+                                 baseColumnNames="size_id"
+                                 baseTableSchemaName="dbo"
+                                 referencedTableName="size"
+                                 referencedTableSchemaName="dbo"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_product_sizes_size_id"/>
+
+        <createTable tableName="product_colors" schemaName="dbo">
+            <column name="product_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="color_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey tableName="product_colors"
+                       schemaName="dbo"
+                       columnNames="product_id, color_id"
+                       constraintName="pk_product_colors"/>
+
+        <addForeignKeyConstraint baseTableName="product_colors"
+                                 baseColumnNames="product_id"
+                                 baseTableSchemaName="dbo"
+                                 referencedTableName="product"
+                                 referencedTableSchemaName="dbo"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_product_colors_product_id"/>
+
+        <addForeignKeyConstraint baseTableName="product_colors"
+                                 baseColumnNames="color_id"
+                                 baseTableSchemaName="dbo"
+                                 referencedTableName="color"
+                                 referencedTableSchemaName="dbo"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_product_colors_color_id"/>
+
+        <createTable tableName="product_tags" schemaName="dbo">
+            <column name="product_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tag_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey tableName="product_tags"
+                       schemaName="dbo"
+                       columnNames="product_id, tag_id"
+                       constraintName="pk_product_tags"/>
+
+        <addForeignKeyConstraint baseTableName="product_tags"
+                                 baseColumnNames="product_id"
+                                 baseTableSchemaName="dbo"
+                                 referencedTableName="product"
+                                 referencedTableSchemaName="dbo"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_product_tags_product_id"/>
+
+        <addForeignKeyConstraint baseTableName="product_tags"
+                                 baseColumnNames="tag_id"
+                                 baseTableSchemaName="dbo"
+                                 referencedTableName="tag"
+                                 referencedTableSchemaName="dbo"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_product_tags_tag_id"/>
+    </changeSet>
+</databaseChangeLog>

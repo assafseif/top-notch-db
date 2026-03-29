@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="005-create-customer-orders-table" author="copilot">
+        <createTable tableName="customer_orders">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_customer_orders" nullable="false"/>
+            </column>
+            <column name="public_id" type="NVARCHAR(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_customer_orders_public_id"/>
+            </column>
+            <column name="type" type="NVARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="NVARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="subtotal" type="FLOAT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="discount" type="FLOAT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total" type="FLOAT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="items_json" type="NVARCHAR(MAX)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="shipping_json" type="NVARCHAR(MAX)"/>
+            <column name="business_json" type="NVARCHAR(MAX)"/>
+            <column name="created_at" type="DATETIME2" defaultValueComputed="SYSUTCDATETIME()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>

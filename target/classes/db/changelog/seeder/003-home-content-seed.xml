@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <property name="homeImageBlob" value="CAST(N'' AS XML).value('xs:base64Binary(&quot;iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WnW60cAAAAASUVORK5CYII=&quot;)', 'VARBINARY(MAX)')" dbms="mssql"/>
+
+    <changeSet id="003-seed-home-content" author="copilot">
+        <insert tableName="hero_banner" schemaName="dbo"><column name="subtitle" value="Elite Performance Drop"/><column name="title" value="Top Notch Pro Kit"/><column name="description" value="Train harder with premium gear designed for speed, stability, and everyday confidence."/><column name="cta" value="Shop Performance"/><column name="link" value="/products"/></insert>
+        <insert tableName="hero_banner" schemaName="dbo"><column name="subtitle" value="New Season Essentials"/><column name="title" value="Move Bold&#10;Stay Ready"/><column name="description" value="Fresh apparel, footwear, and training essentials curated for the new season."/><column name="cta" value="Explore Collection"/><column name="link" value="/products?sort=newest"/></insert>
+        <insert tableName="hero_banner" schemaName="dbo"><column name="subtitle" value="Limited Release"/><column name="title" value="Built For&#10;Top Sellers"/><column name="description" value="Discover the highest-rated pieces customers keep coming back for every week."/><column name="cta" value="See Top Sellers"/><column name="link" value="/products?sort=popular"/></insert>
+
+        <insert tableName="image" schemaName="dbo"><column name="filename" value="top-notch-pro-kit.jpg"/><column name="content_type" value="image/png"/><column name="data" valueComputed="${homeImageBlob}"/><column name="hero_banner_id" valueComputed="(SELECT id FROM dbo.hero_banner WHERE title = 'Top Notch Pro Kit')"/></insert>
+        <insert tableName="image" schemaName="dbo"><column name="filename" value="move-bold-stay-ready.jpg"/><column name="content_type" value="image/png"/><column name="data" valueComputed="${homeImageBlob}"/><column name="hero_banner_id" valueComputed="(SELECT id FROM dbo.hero_banner WHERE title = 'Move Bold' + CHAR(10) + 'Stay Ready')"/></insert>
+        <insert tableName="image" schemaName="dbo"><column name="filename" value="built-for-top-sellers.jpg"/><column name="content_type" value="image/png"/><column name="data" valueComputed="${homeImageBlob}"/><column name="hero_banner_id" valueComputed="(SELECT id FROM dbo.hero_banner WHERE title = 'Built For' + CHAR(10) + 'Top Sellers')"/></insert>
+
+        <insert tableName="image" schemaName="dbo"><column name="filename" value="footwear-tile.jpg"/><column name="content_type" value="image/png"/><column name="data" valueComputed="${homeImageBlob}"/></insert>
+        <insert tableName="image" schemaName="dbo"><column name="filename" value="apparel-tile.jpg"/><column name="content_type" value="image/png"/><column name="data" valueComputed="${homeImageBlob}"/></insert>
+        <insert tableName="image" schemaName="dbo"><column name="filename" value="accessories-tile.jpg"/><column name="content_type" value="image/png"/><column name="data" valueComputed="${homeImageBlob}"/></insert>
+        <insert tableName="image" schemaName="dbo"><column name="filename" value="equipment-tile.jpg"/><column name="content_type" value="image/png"/><column name="data" valueComputed="${homeImageBlob}"/></insert>
+
+        <insert tableName="category_tile" schemaName="dbo"><column name="name" value="Footwear"/><column name="link" valueComputed="CONCAT('/products?category=', (SELECT id FROM dbo.category WHERE name = 'Footwear'))"/><column name="image_id" valueComputed="(SELECT id FROM dbo.image WHERE filename = 'footwear-tile.jpg')"/></insert>
+        <insert tableName="category_tile" schemaName="dbo"><column name="name" value="Apparel"/><column name="link" valueComputed="CONCAT('/products?category=', (SELECT id FROM dbo.category WHERE name = 'Apparel'))"/><column name="image_id" valueComputed="(SELECT id FROM dbo.image WHERE filename = 'apparel-tile.jpg')"/></insert>
+        <insert tableName="category_tile" schemaName="dbo"><column name="name" value="Accessories"/><column name="link" valueComputed="CONCAT('/products?category=', (SELECT id FROM dbo.category WHERE name = 'Accessories'))"/><column name="image_id" valueComputed="(SELECT id FROM dbo.image WHERE filename = 'accessories-tile.jpg')"/></insert>
+        <insert tableName="category_tile" schemaName="dbo"><column name="name" value="Equipment"/><column name="link" valueComputed="CONCAT('/products?category=', (SELECT id FROM dbo.category WHERE name = 'Equipment'))"/><column name="image_id" valueComputed="(SELECT id FROM dbo.image WHERE filename = 'equipment-tile.jpg')"/></insert>
+
+        <insert tableName="image" schemaName="dbo"><column name="filename" value="limited-banner.jpg"/><column name="content_type" value="image/png"/><column name="data" valueComputed="${homeImageBlob}"/></insert>
+        <insert tableName="limited_banner" schemaName="dbo"><column name="image_id" valueComputed="(SELECT id FROM dbo.image WHERE filename = 'limited-banner.jpg')"/><column name="badge" value="Limited Edition"/><column name="title" value="Top Notch&#10;Signature Drop"/><column name="description" value="A premium capsule release with limited quantities, elevated materials, and bold athletic styling."/><column name="cta" value="Shop Limited"/><column name="link" value="/products"/></insert>
+
+        <insert tableName="loyalty_section" schemaName="dbo"><column name="heading" value="Join The Top Notch Club"/><column name="button_text" value="Join Loyalty Program"/><column name="description" value="Unlock rewards, early access, and exclusive member-only perks every time you shop."/></insert>
+        <insert tableName="loyalty_perk" schemaName="dbo"><column name="icon" value="Zap"/><column name="title" value="Fast Rewards"/><column name="description" value="Earn points with every purchase and redeem them on your next order."/><column name="loyalty_section_id" valueComputed="(SELECT id FROM dbo.loyalty_section WHERE heading = 'Join The Top Notch Club')"/></insert>
+        <insert tableName="loyalty_perk" schemaName="dbo"><column name="icon" value="Gift"/><column name="title" value="Member Exclusives"/><column name="description" value="Get early access to drops, bundles, and limited-edition offers."/><column name="loyalty_section_id" valueComputed="(SELECT id FROM dbo.loyalty_section WHERE heading = 'Join The Top Notch Club')"/></insert>
+        <insert tableName="loyalty_perk" schemaName="dbo"><column name="icon" value="Award"/><column name="title" value="VIP Benefits"/><column name="description" value="Receive premium support and special bonuses as your membership grows."/><column name="loyalty_section_id" valueComputed="(SELECT id FROM dbo.loyalty_section WHERE heading = 'Join The Top Notch Club')"/></insert>
+    </changeSet>
+</databaseChangeLog>

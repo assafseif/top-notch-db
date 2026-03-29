@@ -2,13 +2,10 @@ package com.project.controller;
 
 import com.project.dto.AppUserDto;
 import com.project.dto.ApiResponse;
-import com.project.entity.AppUser;
-import com.project.repository.AppUserRepository;
-import com.project.repository.RoleRepository;
+import com.project.dto.UserPasswordUpdateRequest;
 import com.project.service.AppUserService;
+import com.project.service.StoreConfigurationService;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -20,24 +17,21 @@ public class AppUserController {
     @Autowired
     private AppUserService appUserService;
 
+    @Autowired
+    private StoreConfigurationService storeConfigurationService;
+
     // PATCH endpoint for partial update
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasAuthority('users.edit')")
     public ApiResponse<AppUserDto> partialUpdate(@PathVariable Long id, @RequestBody AppUserDto user) {
-        AppUserDto updatedUser = appUserService.partialUpdate(id, user);
-        boolean passwordOnlyUpdate = user.getPassword() != null
-                && !user.getPassword().isBlank()
-                && user.getUsername() == null
-                && user.getFullName() == null
-                && user.getEmail() == null
-                && user.getRoleId() == null
-                && user.getActive() == null;
+        return ApiResponse.of("User updated successfully.", appUserService.partialUpdate(id, user));
+    }
 
-        return ApiResponse.of(
-                passwordOnlyUpdate ? "Password updated successfully." : "User updated successfully.",
-                updatedUser
-        );
+    @PatchMapping("/{id}/password")
+    @PreAuthorize("hasAuthority('users.change_password')")
+    public ApiResponse<AppUserDto> updatePassword(@PathVariable Long id, @RequestBody UserPasswordUpdateRequest request) {
+        return ApiResponse.of("Password updated successfully.", appUserService.updatePassword(id, request.getPassword()));
     }
 
 
@@ -50,8 +44,11 @@ public class AppUserController {
 
     @GetMapping("/paged")
     @PreAuthorize("hasAuthority('users.view')")
-    public Page<AppUserDto> getAllPaged(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
-        return appUserService.getAllPaged(page, size);
+    public Page<AppUserDto> getAllPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) Integer size
+    ) {
+        return appUserService.getAllPaged(page, storeConfigurationService.resolvePageSize(size));
     }
 
 

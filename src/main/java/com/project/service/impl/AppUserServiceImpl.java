@@ -67,6 +67,23 @@ public class AppUserServiceImpl implements AppUserService {
     }
 
     @Override
+    public AppUserDto updatePassword(Long id, String password) {
+        validatePassword(password, true);
+
+        AppUser existing = findExistingUser(id);
+        String encodedPassword = password.startsWith("$2a$")
+                ? password
+                : passwordEncoder.encode(password);
+
+        if (Objects.equals(existing.getPassword(), encodedPassword)) {
+            throw new IllegalArgumentException("New password must be different from the current password.");
+        }
+
+        existing.setPassword(encodedPassword);
+        return toDto(appUserRepository.save(existing));
+    }
+
+    @Override
     public void delete(Long id) {
         AppUser existing = findExistingUser(id);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -111,6 +128,7 @@ public class AppUserServiceImpl implements AppUserService {
         requireText(userDto.getUsername(), "Username is required.");
         requireText(userDto.getFullName(), "Full name is required.");
         requireRole(userDto.getRoleId());
+        forbidPasswordUpdate(userDto.getPassword());
         validatePassword(userDto.getPassword(), false);
         validateDuplicateUsername(userDto.getUsername(), id);
     }
@@ -127,7 +145,14 @@ public class AppUserServiceImpl implements AppUserService {
         if (userDto.getRoleId() != null) {
             requireRole(userDto.getRoleId());
         }
+        forbidPasswordUpdate(userDto.getPassword());
         validatePassword(userDto.getPassword(), false);
+    }
+
+    private void forbidPasswordUpdate(String password) {
+        if (password != null && !password.isBlank()) {
+            throw new IllegalArgumentException("Use the password update endpoint to change a user's password.");
+        }
     }
 
     private boolean applyUserChanges(AppUser user, AppUserDto userDto, boolean fullReplace, boolean creating) {

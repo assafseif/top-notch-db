@@ -36,7 +36,9 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         boolean accountNonLocked = user.getLockoutEndsAt() == null || !user.getLockoutEndsAt().after(new Date());
 
+        String encodedPassword = user.getPassword() == null ? "" : user.getPassword();
+
         return new org.springframework.security.core.userdetails.User(
-            user.getUsername(), user.getPassword(), user.isActive(), true, true, accountNonLocked, authorities);
+            user.getUsername(), encodedPassword, user.isActive(), true, true, accountNonLocked, authorities);
     }
 }

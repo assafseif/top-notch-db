@@ -14,6 +14,8 @@ public class ProductDto {
     private double price;
     private Double originalPrice;
     private String description;
+    private String gender;
+    private String brand;
     private Double rating;
     private Integer reviews;
     private Integer quantity;

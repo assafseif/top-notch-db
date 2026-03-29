@@ -3,6 +3,7 @@ package com.project.controller;
 import com.project.dto.ApiResponse;
 import com.project.dto.RoleDto;
 import com.project.service.RoleService;
+import com.project.service.StoreConfigurationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,6 +19,9 @@ public class RoleController {
     @Autowired
     private RoleService roleService;
 
+    @Autowired
+    private StoreConfigurationService storeConfigurationService;
+
     // ✅ Get all roles
     @GetMapping
     @PreAuthorize("hasAuthority('roles.view')")
@@ -30,9 +34,9 @@ public class RoleController {
     @PreAuthorize("hasAuthority('roles.view')")
     public Page<RoleDto> getAllPaged(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(required = false) Integer size
     ) {
-        return roleService.getAllPaged(PageRequest.of(page, size));
+        return roleService.getAllPaged(PageRequest.of(page, storeConfigurationService.resolvePageSize(size)));
     }
 
     // ✅ Create role

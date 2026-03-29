@@ -6,10 +6,13 @@ spring:
     driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:com.microsoft.sqlserver.jdbc.SQLServerDriver}
   jpa:
     hibernate:
-      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:create-drop}
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:validate}
     properties:
       hibernate:
         dialect: ${SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT:org.hibernate.dialect.SQLServerDialect}
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    drop-first: ${SPRING_LIQUIBASE_DROP_FIRST:false}
   jackson:
     serialization:
       WRITE_DATES_AS_TIMESTAMPS: ${SPRING_JACKSON_SERIALIZATION_WRITE_DATES_AS_TIMESTAMPS:false}

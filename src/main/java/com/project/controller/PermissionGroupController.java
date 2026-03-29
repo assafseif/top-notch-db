@@ -1,5 +1,6 @@
 package com.project.controller;
 
+import com.project.dto.ApiResponse;
 import com.project.dto.PermissionGroupDto;
 import com.project.service.PermissionGroupService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,17 +19,18 @@ public class PermissionGroupController {
     }
 
     @PostMapping
-    public PermissionGroupDto create(@RequestBody PermissionGroupDto group) {
-        return permissionGroupService.create(group);
+    public ApiResponse<PermissionGroupDto> create(@RequestBody PermissionGroupDto group) {
+        return ApiResponse.of("Permission group created successfully.", permissionGroupService.create(group));
     }
 
     @PutMapping("/{id}")
-    public PermissionGroupDto update(@PathVariable Long id, @RequestBody PermissionGroupDto group) {
-        return permissionGroupService.update(id, group);
+    public ApiResponse<PermissionGroupDto> update(@PathVariable Long id, @RequestBody PermissionGroupDto group) {
+        return ApiResponse.of("Permission group updated successfully.", permissionGroupService.update(id, group));
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
+    public ApiResponse<Void> delete(@PathVariable Long id) {
         permissionGroupService.delete(id);
+        return ApiResponse.of("Permission group deleted successfully.");
     }
 }

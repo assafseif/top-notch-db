@@ -5,6 +5,8 @@ import com.project.dto.CategorySummaryDto;
 import com.project.dto.ProductCategoryDto;
 import com.project.dto.ProductDto;
 import com.project.dto.ProductRequest;
+import com.project.dto.StoreProductFiltersDto;
+import com.project.entity.Brand;
 import com.project.entity.Category;
 import com.project.entity.Product;
 import com.project.entity.Image;
@@ -12,6 +14,7 @@ import com.project.entity.Tag;
 import com.project.entity.Size;
 import com.project.entity.Color;
 import com.project.repository.CategoryRepository;
+import com.project.repository.BrandRepository;
 import com.project.repository.ProductRepository;
 import com.project.repository.ImageRepository;
 import com.project.repository.TagRepository;
@@ -20,9 +23,14 @@ import com.project.repository.ColorRepository;
 import com.project.service.ProductService;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -34,10 +42,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Locale;
 import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.TreeSet;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -48,6 +59,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     private CategoryRepository categoryRepository;
+
+    @Autowired
+    private BrandRepository brandRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -71,13 +85,13 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public Page<ProductDto> getAllProductsWithImagesPaged(int page, int size) {
-        return getStoreProducts(null, "newest", page, size);
+        return getStoreProducts(null, "newest", null, null, null, null, page, size);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ProductDto> getProductsByCategoryIdPaged(Long categoryId, int page, int size) {
-        return getStoreProducts(categoryId, "newest", page, size);
+        return getStoreProducts(categoryId, "newest", null, null, null, null, page, size);
     }
 
     @Override
@@ -120,9 +134,10 @@ public class ProductServiceImpl implements ProductService {
             product.setPrice(req.getPrice() != null ? req.getPrice() : 0.0);
             product.setOriginalPrice(req.getOriginalPrice());
             product.setDescription(req.getDescription());
+            product.setGender(normalizeText(req.getGender()));
             product.setRating(req.getRating() != null ? req.getRating() : 0.0);
             product.setReviews(req.getReviews() != null ? req.getReviews() : 0);
-            product.setQuantity(req.getQuantity() != null ? req.getQuantity() : 0);
+            product.setQuantity(req.getQuantity());
 
             // map sizes/colors/tags from strings to entities
             product.setSizes(resolveSizes(req.getSizes()));
@@ -143,15 +158,18 @@ public class ProductServiceImpl implements ProductService {
                 category = categoryRepository.findById(incomingCategoryId).orElse(null);
             }
             if (category == null && incomingCategoryName != null && !incomingCategoryName.isBlank()) {
-                category = categoryRepository.findByName(incomingCategoryName).orElse(null);
+                String normalizedCategoryName = normalizeText(incomingCategoryName);
+                category = categoryRepository.findByNameIgnoreCase(normalizedCategoryName).orElse(null);
                 if (category == null) {
+                    requireAuthority("categories.create", "You do not have permission to create categories.");
                     Category c = new Category();
-                    c.setName(incomingCategoryName);
+                    c.setName(normalizedCategoryName);
                     category = categoryRepository.save(c);
                     logger.info("Created new category id={} name={}", category.getId(), category.getName());
                 }
             }
             product.setCategory(category);
+            product.setBrand(resolveBrandEntity(req.getBrand()));
 
             // If client provided base64 images convert all images to Image entities
             if (req.getImagesBase64() != null && !req.getImagesBase64().isEmpty()) {
@@ -197,6 +215,7 @@ public class ProductServiceImpl implements ProductService {
             product.setPrice(req.getPrice() != null ? req.getPrice() : product.getPrice());
             product.setOriginalPrice(req.getOriginalPrice() != null ? req.getOriginalPrice() : product.getOriginalPrice());
             product.setDescription(req.getDescription() != null ? req.getDescription() : product.getDescription());
+            product.setGender(req.getGender() != null ? normalizeText(req.getGender()) : product.getGender());
             product.setRating(req.getRating() != null ? req.getRating() : product.getRating());
             product.setReviews(req.getReviews() != null ? req.getReviews() : product.getReviews());
             product.setQuantity(req.getQuantity() != null ? req.getQuantity() : product.getQuantity());
@@ -221,15 +240,20 @@ public class ProductServiceImpl implements ProductService {
                 category = categoryRepository.findById(incomingCategoryId).orElse(null);
             }
             if (category == null && incomingCategoryName != null && !incomingCategoryName.isBlank()) {
-                category = categoryRepository.findByName(incomingCategoryName).orElse(null);
+                String normalizedCategoryName = normalizeText(incomingCategoryName);
+                category = categoryRepository.findByNameIgnoreCase(normalizedCategoryName).orElse(null);
                 if (category == null) {
+                    requireAuthority("categories.create", "You do not have permission to create categories.");
                     Category c = new Category();
-                    c.setName(incomingCategoryName);
+                    c.setName(normalizedCategoryName);
                     category = categoryRepository.save(c);
                     logger.info("Created new category id={} name={}", category.getId(), category.getName());
                 }
             }
             product.setCategory(category);
+            if (req.getBrand() != null || product.getBrand() == null) {
+                product.setBrand(resolveBrandEntity(req.getBrand()));
+            }
 
             // images convert - if provided, replace existing images
             if (req.getImagesBase64() != null) {
@@ -309,7 +333,7 @@ public class ProductServiceImpl implements ProductService {
     public List<ProductDto> getAllProductsWithImages() {
         logger.info("getAllProductsWithImages - start");
         try {
-            List<ProductDto> dtos = getStoreProducts(null, "newest", 0, Integer.MAX_VALUE).getContent();
+            List<ProductDto> dtos = getStoreProducts(null, "newest", null, null, null, null, 0, Integer.MAX_VALUE).getContent();
             logger.info("getAllProductsWithImages - returning {} items", dtos.size());
             return dtos;
         } catch (Exception e) {
@@ -347,7 +371,7 @@ public class ProductServiceImpl implements ProductService {
     public List<com.project.dto.ProductDto> getProductsByCategoryId(Long categoryId) {
         logger.info("getProductsByCategoryId - start categoryId={}", categoryId);
         try {
-            List<ProductDto> dtos = getStoreProducts(categoryId, "newest", 0, Integer.MAX_VALUE).getContent();
+            List<ProductDto> dtos = getStoreProducts(categoryId, "newest", null, null, null, null, 0, Integer.MAX_VALUE).getContent();
             logger.info("getProductsByCategoryId - returning {} items for categoryId={}", dtos.size(), categoryId);
             return dtos;
         } catch (Exception e) {
@@ -360,21 +384,53 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductDto> getStoreProducts(Long categoryId, String sortBy, int page, int size) {
+    public Page<ProductDto> getStoreProducts(Long categoryId, String sortBy, List<String> genders, List<String> brands, List<String> sizes, List<String> colors, int page, int size) {
         logger.info("getStoreProducts - start categoryId={} sortBy={} page={} size={}", categoryId, sortBy, page, size);
-        return queryProducts(categoryId, null, sortBy, page, size);
+        return queryProducts(categoryId, null, sortBy, genders, brands, sizes, colors, page, size);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public StoreProductFiltersDto getStoreProductFilters(Long categoryId) {
+        logger.info("getStoreProductFilters - start categoryId={}", categoryId);
+        List<Product> products = productRepository.findAll(Specification.where(hasCategory(categoryId)));
+
+        Set<String> genders = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        Set<String> brands = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        Set<String> sizes = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        Set<String> colors = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+
+        for (Product product : products) {
+            addIfPresent(genders, product.getGender());
+            addIfPresent(brands, product.getBrand() != null ? product.getBrand().getName() : null);
+            collectValues(sizes, product.getSizes() == null ? List.of() : product.getSizes().stream().map(Size::getValue).toList());
+            collectValues(colors, product.getColors() == null ? List.of() : product.getColors().stream().map(Color::getValue).toList());
+        }
+
+        return new StoreProductFiltersDto(
+                new ArrayList<>(genders),
+                new ArrayList<>(brands),
+                new ArrayList<>(sizes),
+                new ArrayList<>(colors),
+                List.of("newest", "popular", "rating", "price-low", "price-high")
+        );
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ProductDto> getAdminProducts(Long categoryId, String search, String sortBy, int page, int size) {
         logger.info("getAdminProducts - start categoryId={} search={} sortBy={} page={} size={}", categoryId, search, sortBy, page, size);
-        return queryProducts(categoryId, search, sortBy, page, size);
+        return queryProducts(categoryId, search, sortBy, null, null, null, null, page, size);
     }
 
-    private Page<ProductDto> queryProducts(Long categoryId, String search, String sortBy, int page, int size) {
+    private Page<ProductDto> queryProducts(Long categoryId, String search, String sortBy, List<String> genders, List<String> brands, List<String> sizes, List<String> colors, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, resolveSort(sortBy));
-        Specification<Product> specification = Specification.where(hasCategory(categoryId)).and(matchesSearch(search));
+        Specification<Product> specification = Specification.where(hasCategory(categoryId))
+                .and(matchesSearch(search))
+                .and(matchesScalarValues("gender", genders))
+            .and(matchesRelationValues("brand", "name", brands))
+                .and(matchesCollectionValues("sizes", "value", sizes))
+                .and(matchesCollectionValues("colors", "value", colors));
         Page<Product> productPage = productRepository.findAll(specification, pageable);
         List<ProductDto> dtos = new ArrayList<>();
         for (Product product : productPage.getContent()) {
@@ -388,7 +444,7 @@ public class ProductServiceImpl implements ProductService {
             if (categoryId == null) {
                 return criteriaBuilder.conjunction();
             }
-            return criteriaBuilder.equal(root.join("category").get("id"), categoryId);
+            return criteriaBuilder.equal(root.get("category").get("id"), categoryId);
         };
     }
 
@@ -399,11 +455,48 @@ public class ProductServiceImpl implements ProductService {
             }
 
             String pattern = "%" + search.trim().toLowerCase(Locale.ROOT) + "%";
+            Join<Product, Category> categoryJoin = root.join("category", JoinType.LEFT);
             return criteriaBuilder.or(
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), pattern),
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), pattern),
-                    criteriaBuilder.like(criteriaBuilder.lower(root.join("category").get("name")), pattern)
+                    criteriaBuilder.like(criteriaBuilder.lower(categoryJoin.get("name")), pattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.join("brand", JoinType.LEFT).get("name")), pattern)
             );
+        };
+    }
+
+    private Specification<Product> matchesScalarValues(String fieldName, List<String> rawValues) {
+        List<String> normalizedValues = normalizeFilterValues(rawValues);
+        return (root, query, criteriaBuilder) -> {
+            if (normalizedValues.isEmpty()) {
+                return criteriaBuilder.conjunction();
+            }
+            return criteriaBuilder.lower(root.get(fieldName)).in(normalizedValues);
+        };
+    }
+
+    private Specification<Product> matchesRelationValues(String relationName, String fieldName, List<String> rawValues) {
+        List<String> normalizedValues = normalizeFilterValues(rawValues);
+        return (root, query, criteriaBuilder) -> {
+            if (normalizedValues.isEmpty()) {
+                return criteriaBuilder.conjunction();
+            }
+            Join<Product, ?> join = root.join(relationName, JoinType.LEFT);
+            return criteriaBuilder.lower(join.get(fieldName)).in(normalizedValues);
+        };
+    }
+
+    private Specification<Product> matchesCollectionValues(String relationName, String fieldName, List<String> rawValues) {
+        List<String> normalizedValues = normalizeFilterValues(rawValues);
+        return (root, query, criteriaBuilder) -> {
+            if (normalizedValues.isEmpty()) {
+                return criteriaBuilder.conjunction();
+            }
+            if (query != null) {
+                query.distinct(true);
+            }
+            Join<Product, ?> join = root.join(relationName, JoinType.LEFT);
+            return criteriaBuilder.lower(join.get(fieldName)).in(normalizedValues);
         };
     }
 
@@ -425,6 +518,8 @@ public class ProductServiceImpl implements ProductService {
         dto.setPrice(p.getPrice());
         dto.setOriginalPrice(p.getOriginalPrice());
         dto.setDescription(p.getDescription());
+        dto.setGender(p.getGender());
+        dto.setBrand(p.getBrand() != null ? p.getBrand().getName() : null);
         dto.setRating(p.getRating());
         dto.setReviews(p.getReviews());
 
@@ -535,6 +630,18 @@ public class ProductServiceImpl implements ProductService {
         if (req.getQuantity() != null && req.getQuantity() < 0) {
             throw new IllegalArgumentException("Product quantity cannot be negative.");
         }
+        if (creating && isBlank(req.getGender())) {
+            throw new IllegalArgumentException("Product gender is required.");
+        }
+        if (creating && isBlank(req.getBrand())) {
+            throw new IllegalArgumentException("Product brand is required.");
+        }
+        if (!creating && req.getGender() != null && isBlank(req.getGender())) {
+            throw new IllegalArgumentException("Product gender cannot be blank.");
+        }
+        if (!creating && req.getBrand() != null && isBlank(req.getBrand())) {
+            throw new IllegalArgumentException("Product brand cannot be blank.");
+        }
         if (req.getCategoryId() == null && (req.getCategoryName() == null || req.getCategoryName().trim().isEmpty())) {
             throw new IllegalArgumentException("Product category is required.");
         }
@@ -578,5 +685,66 @@ public class ProductServiceImpl implements ProductService {
             out.add(c);
         }
         return out;
+    }
+
+    private List<String> normalizeFilterValues(List<String> rawValues) {
+        if (rawValues == null || rawValues.isEmpty()) {
+            return List.of();
+        }
+
+        Set<String> normalized = new LinkedHashSet<>();
+        for (String rawValue : rawValues) {
+            if (rawValue == null || rawValue.isBlank()) {
+                continue;
+            }
+
+            for (String splitValue : rawValue.split(",")) {
+                String trimmed = splitValue.trim().toLowerCase(Locale.ROOT);
+                if (!trimmed.isEmpty()) {
+                    normalized.add(trimmed);
+                }
+            }
+        }
+
+        return new ArrayList<>(normalized);
+    }
+
+    private void addIfPresent(Collection<String> target, String value) {
+        if (!isBlank(value)) {
+            target.add(value.trim());
+        }
+    }
+
+    private void collectValues(Collection<String> target, Collection<String> values) {
+        for (String value : values) {
+            addIfPresent(target, value);
+        }
+    }
+
+    private String normalizeText(String value) {
+        return value == null ? null : value.trim();
+    }
+
+    private Brand resolveBrandEntity(String requestedBrand) {
+        String normalizedBrand = normalizeText(requestedBrand);
+        if (normalizedBrand == null || normalizedBrand.isBlank()) {
+            throw new IllegalArgumentException("Product brand is required.");
+        }
+        return brandRepository.findByNameIgnoreCase(normalizedBrand)
+                .orElseGet(() -> {
+                    requireAuthority("brands.create", "You do not have permission to create brands.");
+                    return brandRepository.save(new Brand(null, normalizedBrand, null));
+                });
+    }
+
+    private void requireAuthority(String authority, String message) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getAuthorities().stream().noneMatch(grantedAuthority -> authority.equals(grantedAuthority.getAuthority()))) {
+            throw new AccessDeniedException(message);
+        }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }

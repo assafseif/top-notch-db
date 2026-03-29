@@ -16,11 +16,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+    private static final String INVALID_TOKEN_RESPONSE = "{\"message\":\"Invalid or expired token.\"}";
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
@@ -56,6 +58,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 logger.info("Username extracted from JWT: {}", username);
             } catch (Exception e) {
                 logger.error("Error extracting username from JWT", e);
+                writeUnauthorizedResponse(response);
+                return;
             }
         } else {
             logger.warn("Authorization header does not start with Bearer");
@@ -69,6 +73,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // Step 4: Load user details
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                 logger.info("UserDetails loaded: {}", userDetails.getUsername());
+
+                if (!userDetails.isEnabled()) {
+                    logger.warn("User is inactive, rejecting JWT for user: {}", username);
+                    SecurityContextHolder.clearContext();
+                    writeUnauthorizedResponse(response);
+                    return;
+                }
 
                 // Step 5: Validate token
                 if (jwtTokenProvider.validateToken(jwt, userDetails)) {
@@ -91,10 +102,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 } else {
                     logger.warn("JWT token is invalid");
+                    SecurityContextHolder.clearContext();
+                    writeUnauthorizedResponse(response);
+                    return;
                 }
 
             } catch (Exception e) {
                 logger.error("Error during authentication process", e);
+                SecurityContextHolder.clearContext();
+                writeUnauthorizedResponse(response);
+                return;
             }
 
         } else {
@@ -109,5 +126,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
 
         logger.info("=== JWT FILTER END ===");
+    }
+
+    private void writeUnauthorizedResponse(HttpServletResponse response) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.getWriter().write(INVALID_TOKEN_RESPONSE);
+        response.getWriter().flush();
     }
 }

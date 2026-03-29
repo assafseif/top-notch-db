@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="015-seed-store-configuration-and-permissions" author="copilot">
+        <insert tableName="store_configurations">
+            <column name="field_name" value="whatsapp_number"/>
+            <column name="field_value" value="+96170238705"/>
+        </insert>
+
+        <insert tableName="store_configurations">
+            <column name="field_name" value="pagination"/>
+            <column name="field_value" value="10"/>
+        </insert>
+
+        <insert tableName="permission_groups">
+            <column name="name" value="configuration"/>
+            <column name="label" value="Configuration"/>
+        </insert>
+
+        <insert tableName="permissions">
+            <column name="name" value="configuration.view"/>
+            <column name="label" value="View Configuration"/>
+            <column name="group_name" value="configuration"/>
+            <column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'configuration')"/>
+        </insert>
+        <insert tableName="permissions">
+            <column name="name" value="configuration.edit"/>
+            <column name="label" value="Edit Configuration"/>
+            <column name="group_name" value="configuration"/>
+            <column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'configuration')"/>
+        </insert>
+
+        <insert tableName="role_permissions">
+            <column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/>
+            <column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'configuration.view')"/>
+        </insert>
+        <insert tableName="role_permissions">
+            <column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/>
+            <column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'configuration.edit')"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <include file="db/changelog/schema/001-initial-schema.xml"/>
+    <include file="db/changelog/seeder/001-security-seed.xml"/>
+    <include file="db/changelog/seeder/002-product-seed.xml"/>
+    <include file="db/changelog/seeder/003-home-content-seed.xml"/>
+    <include file="db/changelog/schema/004-product-brand-gender.xml"/>
+    <include file="db/changelog/schema/005-order-schema.xml"/>
+    <include file="db/changelog/seeder/006-clearance-category-seed.xml"/>
+    <include file="db/changelog/schema/007-brand-schema.xml"/>
+    <include file="db/changelog/seeder/008-brand-seed.xml"/>
+    <include file="db/changelog/seeder/009-permission-expansion-seed.xml"/>
+    <include file="db/changelog/seeder/010-brand-category-view-cleanup-seed.xml"/>
+    <include file="db/changelog/schema/011-store-configuration-schema.xml"/>
+    <include file="db/changelog/seeder/012-store-configuration-seed.xml"/>
+    <include file="db/changelog/schema/013-product-quantity-optional.xml"/>
+</databaseChangeLog>

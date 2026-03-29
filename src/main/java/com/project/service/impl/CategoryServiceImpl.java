@@ -55,7 +55,14 @@ public class CategoryServiceImpl implements CategoryService {
     public Category createCategory(Category category) {
         logger.info("createCategory - start name={}", category != null ? category.getName() : null);
         try {
-            Category saved = categoryRepository.save(category);
+            String normalizedName = normalizeCategoryName(category != null ? category.getName() : null);
+            if (categoryRepository.existsByNameIgnoreCase(normalizedName)) {
+                throw new IllegalArgumentException("Category name already exists.");
+            }
+
+            Category entity = new Category();
+            entity.setName(normalizedName);
+            Category saved = categoryRepository.save(entity);
             logger.info("createCategory - saved id={}", saved.getId());
             return saved;
         } catch (Exception e) {
@@ -70,8 +77,18 @@ public class CategoryServiceImpl implements CategoryService {
     public Category updateCategory(Long id, Category category) {
         logger.info("updateCategory - start id={} name={}", id, category != null ? category.getName() : null);
         try {
-            category.setId(id);
-            Category updated = categoryRepository.save(category);
+            Category existing = categoryRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Category not found."));
+
+            String normalizedName = normalizeCategoryName(category != null ? category.getName() : null);
+            categoryRepository.findByNameIgnoreCase(normalizedName)
+                    .filter(found -> !found.getId().equals(id))
+                    .ifPresent(found -> {
+                        throw new IllegalArgumentException("Category name already exists.");
+                    });
+
+            existing.setName(normalizedName);
+            Category updated = categoryRepository.save(existing);
             logger.info("updateCategory - saved id={}", id);
             return updated;
         } catch (Exception e) {
@@ -98,6 +115,13 @@ public class CategoryServiceImpl implements CategoryService {
         } finally {
             logger.debug("deleteCategory - end id={}", id);
         }
+    }
+
+    private String normalizeCategoryName(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalArgumentException("Category name is required.");
+        }
+        return value.trim();
     }
 }
 

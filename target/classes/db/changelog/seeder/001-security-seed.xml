@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="001-seed-security-data" author="copilot">
+        <insert tableName="permission_groups"><column name="name" value="products"/><column name="label" value="Products"/></insert>
+        <insert tableName="permission_groups"><column name="name" value="homepage"/><column name="label" value="Homepage"/></insert>
+        <insert tableName="permission_groups"><column name="name" value="users"/><column name="label" value="User Management"/></insert>
+        <insert tableName="permission_groups"><column name="name" value="roles"/><column name="label" value="Role Management"/></insert>
+        <insert tableName="permission_groups"><column name="name" value="orders"/><column name="label" value="Orders"/></insert>
+        <insert tableName="permission_groups"><column name="name" value="wholesale"/><column name="label" value="Wholesale"/></insert>
+
+        <insert tableName="permissions"><column name="name" value="products.view"/><column name="label" value="View Products"/><column name="group_name" value="products"/><column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'products')"/></insert>
+        <insert tableName="permissions"><column name="name" value="products.create"/><column name="label" value="Create Products"/><column name="group_name" value="products"/><column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'products')"/></insert>
+        <insert tableName="permissions"><column name="name" value="products.edit"/><column name="label" value="Edit Products"/><column name="group_name" value="products"/><column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'products')"/></insert>
+        <insert tableName="permissions"><column name="name" value="products.delete"/><column name="label" value="Delete Products"/><column name="group_name" value="products"/><column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'products')"/></insert>
+        <insert tableName="permissions"><column name="name" value="homepage.view"/><column name="label" value="View Homepage Settings"/><column name="group_name" value="homepage"/><column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'homepage')"/></insert>
+        <insert tableName="permissions"><column name="name" value="homepage.edit"/><column name="label" value="Edit Homepage Content"/><column name="group_name" value="homepage"/><column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'homepage')"/></insert>
+        <insert tableName="permissions"><column name="name" value="users.view"/><column name="label" value="View Users"/><column name="group_name" value="users"/><column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'users')"/></insert>
+        <insert tableName="permissions"><column name="name" value="users.create"/><column name="label" value="Create Users"/><column name="group_name" value="users"/><column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'users')"/></insert>
+        <insert tableName="permissions"><column name="name" value="users.edit"/><column name="label" value="Edit Users"/><column name="group_name" value="users"/><column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'users')"/></insert>
+        <insert tableName="permissions"><column name="name" value="users.delete"/><column name="label" value="Delete Users"/><column name="group_name" value="users"/><column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'users')"/></insert>
+        <insert tableName="permissions"><column name="name" value="users.change_password"/><column name="label" value="Change User Passwords"/><column name="group_name" value="users"/><column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'users')"/></insert>
+        <insert tableName="permissions"><column name="name" value="roles.view"/><column name="label" value="View Roles"/><column name="group_name" value="roles"/><column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'roles')"/></insert>
+        <insert tableName="permissions"><column name="name" value="roles.create"/><column name="label" value="Create Roles"/><column name="group_name" value="roles"/><column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'roles')"/></insert>
+        <insert tableName="permissions"><column name="name" value="roles.edit"/><column name="label" value="Edit Roles"/><column name="group_name" value="roles"/><column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'roles')"/></insert>
+        <insert tableName="permissions"><column name="name" value="roles.delete"/><column name="label" value="Delete Roles"/><column name="group_name" value="roles"/><column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'roles')"/></insert>
+        <insert tableName="permissions"><column name="name" value="orders.view"/><column name="label" value="View Orders"/><column name="group_name" value="orders"/><column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'orders')"/></insert>
+        <insert tableName="permissions"><column name="name" value="orders.manage"/><column name="label" value="Manage Orders"/><column name="group_name" value="orders"/><column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'orders')"/></insert>
+        <insert tableName="permissions"><column name="name" value="wholesale.view"/><column name="label" value="View Wholesale Inquiries"/><column name="group_name" value="wholesale"/><column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'wholesale')"/></insert>
+        <insert tableName="permissions"><column name="name" value="wholesale.manage"/><column name="label" value="Manage Wholesale"/><column name="group_name" value="wholesale"/><column name="group_id" valueComputed="(SELECT id FROM permission_groups WHERE name = 'wholesale')"/></insert>
+
+        <insert tableName="roles"><column name="name" value="Super Admin"/><column name="description" value="Full access to everything"/><column name="is_system" valueBoolean="true"/></insert>
+
+        <insert tableName="role_permissions"><column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/><column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'products.view')"/></insert>
+        <insert tableName="role_permissions"><column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/><column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'products.create')"/></insert>
+        <insert tableName="role_permissions"><column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/><column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'products.edit')"/></insert>
+        <insert tableName="role_permissions"><column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/><column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'products.delete')"/></insert>
+        <insert tableName="role_permissions"><column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/><column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'homepage.view')"/></insert>
+        <insert tableName="role_permissions"><column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/><column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'homepage.edit')"/></insert>
+        <insert tableName="role_permissions"><column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/><column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'users.view')"/></insert>
+        <insert tableName="role_permissions"><column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/><column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'users.create')"/></insert>
+        <insert tableName="role_permissions"><column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/><column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'users.edit')"/></insert>
+        <insert tableName="role_permissions"><column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/><column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'users.delete')"/></insert>
+        <insert tableName="role_permissions"><column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/><column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'users.change_password')"/></insert>
+        <insert tableName="role_permissions"><column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/><column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'roles.view')"/></insert>
+        <insert tableName="role_permissions"><column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/><column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'roles.create')"/></insert>
+        <insert tableName="role_permissions"><column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/><column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'roles.edit')"/></insert>
+        <insert tableName="role_permissions"><column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/><column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'roles.delete')"/></insert>
+        <insert tableName="role_permissions"><column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/><column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'orders.view')"/></insert>
+        <insert tableName="role_permissions"><column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/><column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'orders.manage')"/></insert>
+        <insert tableName="role_permissions"><column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/><column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'wholesale.view')"/></insert>
+        <insert tableName="role_permissions"><column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/><column name="permission_id" valueComputed="(SELECT id FROM permissions WHERE name = 'wholesale.manage')"/></insert>
+
+        <insert tableName="users">
+            <column name="username" value="admin"/>
+            <column name="password" value="$2a$10$4lJXAE23eYZUCdUQIy39TeW0CAQ2aOQNm0ipE3aTGzP1atnUsAWb2"/>
+            <column name="full_name" value="Admin"/>
+            <column name="email" value="admin@topnotch.com"/>
+            <column name="role_id" valueComputed="(SELECT id FROM roles WHERE name = 'Super Admin')"/>
+            <column name="is_active" valueBoolean="true"/>
+            <column name="failed_login_attempts" valueNumeric="0"/>
+            <column name="lockout_ends_at"/>
+            <column name="created_at" valueDate="2026-03-29T00:00:00"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

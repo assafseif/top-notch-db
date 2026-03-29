@@ -1,8 +1,10 @@
 package com.project.controller;
 
 import com.project.dto.ProductDto;
+import com.project.dto.StoreProductFiltersDto;
 import com.project.entity.Product;
 import com.project.service.ProductService;
+import com.project.service.StoreConfigurationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.CacheControl;
@@ -29,19 +31,25 @@ public class StoreProductController {
     private static final Logger logger = LoggerFactory.getLogger(StoreProductController.class);
 
     private final ProductService productService;
+    private final StoreConfigurationService storeConfigurationService;
 
-    public StoreProductController(ProductService productService) {
+    public StoreProductController(ProductService productService, StoreConfigurationService storeConfigurationService) {
         this.productService = productService;
+        this.storeConfigurationService = storeConfigurationService;
     }
 
     @GetMapping
     public List<ProductDto> getAllStoreProducts(
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(defaultValue = "newest") String sortBy
+            @RequestParam(defaultValue = "newest") String sortBy,
+            @RequestParam(name = "gender", required = false) List<String> genders,
+            @RequestParam(name = "brand", required = false) List<String> brands,
+            @RequestParam(name = "size", required = false) List<String> sizes,
+            @RequestParam(name = "color", required = false) List<String> colors
     ) {
         logger.info("GET /api/store/products - start categoryId={} sortBy={}", categoryId, sortBy);
         try {
-            return productService.getStoreProducts(categoryId, sortBy, 0, Integer.MAX_VALUE).getContent();
+            return productService.getStoreProducts(categoryId, sortBy, genders, brands, sizes, colors, 0, Integer.MAX_VALUE).getContent();
         } finally {
             logger.debug("GET /api/store/products - end");
         }
@@ -51,14 +59,29 @@ public class StoreProductController {
     public Page<ProductDto> getStoreProductsPaged(
             @RequestParam(required = false) Long categoryId,
             @RequestParam(defaultValue = "newest") String sortBy,
+            @RequestParam(name = "gender", required = false) List<String> genders,
+            @RequestParam(name = "brand", required = false) List<String> brands,
+            @RequestParam(name = "size", required = false) List<String> sizes,
+            @RequestParam(name = "color", required = false) List<String> colors,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(name = "pageSize", required = false) Integer pageSize
     ) {
-        logger.info("GET /api/store/products/paged - start categoryId={} sortBy={} page={} size={}", categoryId, sortBy, page, size);
+        int resolvedPageSize = storeConfigurationService.resolvePageSize(pageSize);
+        logger.info("GET /api/store/products/paged - start categoryId={} sortBy={} page={} size={}", categoryId, sortBy, page, resolvedPageSize);
         try {
-            return productService.getStoreProducts(categoryId, sortBy, page, size);
+            return productService.getStoreProducts(categoryId, sortBy, genders, brands, sizes, colors, page, resolvedPageSize);
         } finally {
             logger.debug("GET /api/store/products/paged - end");
+        }
+    }
+
+    @GetMapping("/filters")
+    public StoreProductFiltersDto getStoreProductFilters(@RequestParam(required = false) Long categoryId) {
+        logger.info("GET /api/store/products/filters - start categoryId={}", categoryId);
+        try {
+            return productService.getStoreProductFilters(categoryId);
+        } finally {
+            logger.debug("GET /api/store/products/filters - end");
         }
     }
 

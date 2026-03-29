@@ -12,6 +12,7 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     // find all products that belong to a category by its id
     List<Product> findAllByCategory_Id(Long categoryId);
     long countByCategory_Id(Long categoryId);
+        long countByBrand_Id(Long brandId);
 
     // paginated
     Page<Product> findAll(Pageable pageable);

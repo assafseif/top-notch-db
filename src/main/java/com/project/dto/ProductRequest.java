@@ -16,6 +16,8 @@ public class ProductRequest {
     private Long categoryId;
     private List<String> imagesBase64;
     private String description;
+    private String gender;
+    private String brand;
     private Double rating;
     private Integer reviews;
     private Integer quantity;
