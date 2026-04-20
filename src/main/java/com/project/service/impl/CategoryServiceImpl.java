@@ -1,8 +1,11 @@
 package com.project.service.impl;
 
+import com.project.dto.SubcategoryRequest;
 import com.project.entity.Category;
+import com.project.entity.Subcategory;
 import com.project.repository.CategoryRepository;
 import com.project.repository.ProductRepository;
+import com.project.repository.SubcategoryRepository;
 import com.project.service.CategoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +23,9 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private SubcategoryRepository subcategoryRepository;
 
     @Override
     public List<Category> getAllCategories() {
@@ -117,9 +123,97 @@ public class CategoryServiceImpl implements CategoryService {
         }
     }
 
+    @Override
+    public Subcategory createSubcategory(Long categoryId, SubcategoryRequest request) {
+        logger.info("createSubcategory - start categoryId={} name={}", categoryId, request != null ? request.getName() : null);
+        try {
+            Category category = categoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new IllegalArgumentException("Category not found."));
+
+            String normalizedName = normalizeRequiredName(request != null ? request.getName() : null, "Subcategory name is required.");
+            if (subcategoryRepository.existsByCategory_IdAndNameIgnoreCase(categoryId, normalizedName)) {
+                throw new IllegalArgumentException("Subcategory name already exists for this category.");
+            }
+
+            Subcategory subcategory = new Subcategory();
+            subcategory.setName(normalizedName);
+            subcategory.setCategory(category);
+            return subcategoryRepository.save(subcategory);
+        } catch (Exception e) {
+            logger.error("createSubcategory - error categoryId={}", categoryId, e);
+            throw e;
+        } finally {
+            logger.debug("createSubcategory - end categoryId={}", categoryId);
+        }
+    }
+
+    @Override
+    public Subcategory updateSubcategory(Long subcategoryId, SubcategoryRequest request) {
+        logger.info("updateSubcategory - start id={} name={} categoryId={}", subcategoryId, request != null ? request.getName() : null, request != null ? request.getCategoryId() : null);
+        try {
+            Subcategory subcategory = subcategoryRepository.findById(subcategoryId)
+                    .orElseThrow(() -> new IllegalArgumentException("Subcategory not found."));
+
+            Long targetCategoryId = request != null && request.getCategoryId() != null
+                    ? request.getCategoryId()
+                    : (subcategory.getCategory() != null ? subcategory.getCategory().getId() : null);
+            if (targetCategoryId == null) {
+                throw new IllegalArgumentException("Category is required.");
+            }
+
+            Category targetCategory = categoryRepository.findById(targetCategoryId)
+                    .orElseThrow(() -> new IllegalArgumentException("Category not found."));
+
+            String normalizedName = normalizeRequiredName(request != null ? request.getName() : null, "Subcategory name is required.");
+            subcategoryRepository.findByCategory_IdAndNameIgnoreCase(targetCategoryId, normalizedName)
+                    .filter(found -> !found.getId().equals(subcategoryId))
+                    .ifPresent(found -> {
+                        throw new IllegalArgumentException("Subcategory name already exists for this category.");
+                    });
+
+            subcategory.setName(normalizedName);
+            subcategory.setCategory(targetCategory);
+            return subcategoryRepository.save(subcategory);
+        } catch (Exception e) {
+            logger.error("updateSubcategory - error id={}", subcategoryId, e);
+            throw e;
+        } finally {
+            logger.debug("updateSubcategory - end id={}", subcategoryId);
+        }
+    }
+
+    @Override
+    public void deleteSubcategory(Long subcategoryId) {
+        logger.info("deleteSubcategory - start id={}", subcategoryId);
+        try {
+            if (!subcategoryRepository.existsById(subcategoryId)) {
+                throw new IllegalArgumentException("Subcategory not found.");
+            }
+
+            long productCount = productRepository.countBySubcategory_Id(subcategoryId);
+            if (productCount > 0) {
+                throw new IllegalStateException("Cannot delete subcategory with existing products.");
+            }
+
+            subcategoryRepository.deleteById(subcategoryId);
+        } catch (Exception e) {
+            logger.error("deleteSubcategory - error id={}", subcategoryId, e);
+            throw e;
+        } finally {
+            logger.debug("deleteSubcategory - end id={}", subcategoryId);
+        }
+    }
+
     private String normalizeCategoryName(String value) {
         if (value == null || value.trim().isEmpty()) {
             throw new IllegalArgumentException("Category name is required.");
+        }
+        return value.trim();
+    }
+
+    private String normalizeRequiredName(String value, String message) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalArgumentException(message);
         }
         return value.trim();
     }

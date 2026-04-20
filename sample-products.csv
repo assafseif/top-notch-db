@@ -1,0 +1,22 @@
+name,barcode,price,originalPrice,quantity,category,subcategory,brand,description,gender,rating,reviews,sizes,colors,tags,isNew,isLimited,isBestseller,itemCode
+street sprint runner,sku001,89.99,109.99,45,footwear,sneakers,nova step,lightweight everyday sneaker with responsive foam cushioning,unisex,4.6,124,8|9|10|11,black|white,running|daily wear,true,false,true,ic001
+velocity road pro,sku002,119.99,139.99,32,footwear,running shoes,peak motion,breathable running shoe built for long distance sessions,men,4.7,96,9|10|11|12,blue|white,performance|road,false,false,true,sku002
+ignite trainer x,sku003,99.99,119.99,28,footwear,training shoes,forge lab,stable cross training shoe for gym and agility drills,unisex,4.5,73,8|9|10|11,grey|orange,training|gym,true,false,false,sku003
+coast slide comfort,sku004,34.99,44.99,60,footwear,slides,sand drift,soft recovery slides with textured footbed,women,4.4,58,6|7|8|9,black|beige,recovery|casual,false,false,false,sku004
+urban fleece hoodie,sku005,64.99,79.99,40,apparel,hoodies,northline,midweight fleece hoodie for cool day layering,unisex,4.6,110,s|m|l|xl,charcoal|black,hoodie|streetwear,true,false,true,sku005
+core cotton tee,sku006,24.99,29.99,90,apparel,t-shirts,thread form,soft cotton t shirt with athletic fit,men,4.3,87,m|l|xl,white|navy,basics|essential,false,false,false,sku006
+motion taper jogger,sku007,54.99,69.99,50,apparel,joggers,active line,tapered jogger with zip pockets and stretch waistband,men,4.5,77,s|m|l|xl,black|olive,joggers|training,false,false,true,sku007
+storm shell jacket,sku008,89.99,109.99,25,apparel,jackets,altitude wear,lightweight wind resistant jacket with full zip front,women,4.7,49,s|m|l,navy|grey,outerwear|weather,true,false,false,sku008
+classic snap cap,sku009,22.99,27.99,70,accessories,caps,urban peak,structured cap with curved brim and adjustable back,unisex,4.2,41,one size,black|red,cap|lifestyle,false,false,false,sku009
+commute carry bag,sku010,74.99,89.99,18,accessories,bags,haul mark,durable duffel bag with shoe compartment and inner sleeves,unisex,4.8,36,one size,black|grey,bag|travel,false,true,true,sku010
+performance crew socks,sku011,14.99,19.99,120,accessories,socks,stepwise,cushioned crew socks for training and daily use,unisex,4.4,91,s|m|l,white|black,socks|comfort,true,false,false,sku011
+utility woven belt,sku012,19.99,24.99,55,accessories,belts,field loop,woven belt with metal buckle and flexible fit,men,4.1,22,s|m|l,brown|black,belt|utility,false,false,false,sku012
+flex training set,sku013,49.99,59.99,35,training,gym wear,rep zone,moisture wicking top for intense workout sessions,women,4.4,54,s|m|l,purple|black,gym|activewear,true,false,false,sku013
+power compression top,sku014,39.99,49.99,26,training,compression,forge fit,compression long sleeve designed for muscle support,men,4.5,39,m|l|xl,black|grey,compression|performance,false,false,true,sku014
+airflow session shorts,sku015,29.99,36.99,48,training,shorts,tempo kit,quick dry shorts with ventilated side panels,men,4.3,61,m|l|xl,green|black,training|shorts,false,false,false,sku015
+track elite suit,sku016,94.99,119.99,20,training,tracksuits,stride house,slim fit tracksuit for warm up and travel days,unisex,4.7,28,m|l|xl,navy|white,tracksuit|premium,true,true,false,sku016
+hydration steel bottle,sku017,18.99,24.99,85,equipment,water bottles,pure flow,insulated water bottle that keeps drinks cold for hours,unisex,4.8,143,750ml,silver|black,bottle|hydration,false,false,true,sku017
+grip lift gloves,sku018,21.99,27.99,42,equipment,gloves,iron hold,padded training gloves with palm grip reinforcement,unisex,4.4,33,s|m|l,black|red,gloves|lifting,false,false,false,sku018
+resist pro band set,sku019,27.99,34.99,38,equipment,resistance bands,move max,resistance band kit with multiple tension levels,unisex,4.6,57,light|medium|heavy,multi,home workout|bands,true,false,true,sku019
+balance yoga mat,sku020,31.99,39.99,44,equipment,yoga mats,calm form,non slip yoga mat with extra knee support,women,4.7,68,standard,pink|teal,yoga|mobility,false,false,true,sku020
+

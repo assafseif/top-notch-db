@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -24,6 +25,18 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
+
+    @PostMapping("/import-excel")
+    @PreAuthorize("hasAuthority('products.create')")
+    public ApiResponse<Void> importProductsFromExcel(@RequestParam("files") List<MultipartFile> files) {
+        logger.info("POST /api/products/import-excel - start");
+        try {
+            productService.importProductsFromExcel(files);
+            return ApiResponse.of("Products imported successfully.");
+        } finally {
+            logger.debug("POST /api/products/import-excel - end");
+        }
+    }
     private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
 
     @Autowired

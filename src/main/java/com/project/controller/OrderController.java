@@ -36,6 +36,11 @@ public class OrderController {
         return ApiResponse.of("Order saved successfully.", orderService.create(order));
     }
 
+    @GetMapping("/{id}")
+    public OrderDto getById(@PathVariable String id) {
+        return orderService.getByPublicId(id);
+    }
+
     @GetMapping
     @PreAuthorize("hasAuthority('orders.view') or hasAuthority('wholesale.view')")
     public Page<OrderDto> getAll(

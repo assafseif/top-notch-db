@@ -11,10 +11,13 @@ import lombok.*;
 public class ProductRequest {
     private String name;
     private String barcode;
+    private String itemCode;
     private Double price;
     private Double originalPrice;
     private String categoryName;
     private Long categoryId;
+    private String subcategoryName;
+    private Long subcategoryId;
     private List<String> imagesBase64;
     private String description;
     private String gender;

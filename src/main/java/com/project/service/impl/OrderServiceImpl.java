@@ -60,6 +60,11 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public OrderDto getByPublicId(String publicId) {
+        return toDto(findByPublicId(publicId));
+    }
+
+    @Override
     public Page<OrderDto> getVisibleOrders(Authentication authentication, String type, String status, PageRequest pageRequest) {
         Set<String> authorities = getAuthorities(authentication);
         boolean canViewCart = authorities.contains("orders.view");

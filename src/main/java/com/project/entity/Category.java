@@ -29,6 +29,11 @@ public class Category {
     @ToString.Exclude
     private List<Product> products;
 
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OrderBy("name ASC")
+    @ToString.Exclude
+    private List<Subcategory> subcategories;
+
     @JsonCreator
     public Category(@JsonProperty("name") String name) {
         this.name = name;

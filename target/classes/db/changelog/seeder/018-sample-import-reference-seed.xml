@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="018-seed-import-subcategories" author="copilot">
+        <sql dbms="mssql">
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.subcategory s
+                INNER JOIN dbo.category c ON c.id = s.category_id
+                WHERE c.name = 'footwear' AND s.name = 'sneakers'
+            )
+                INSERT INTO dbo.subcategory(name, category_id)
+                VALUES ('sneakers', (SELECT id FROM dbo.category WHERE name = 'footwear'));
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.subcategory s
+                INNER JOIN dbo.category c ON c.id = s.category_id
+                WHERE c.name = 'footwear' AND s.name = 'running shoes'
+            )
+                INSERT INTO dbo.subcategory(name, category_id)
+                VALUES ('running shoes', (SELECT id FROM dbo.category WHERE name = 'footwear'));
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.subcategory s
+                INNER JOIN dbo.category c ON c.id = s.category_id
+                WHERE c.name = 'footwear' AND s.name = 'training shoes'
+            )
+                INSERT INTO dbo.subcategory(name, category_id)
+                VALUES ('training shoes', (SELECT id FROM dbo.category WHERE name = 'footwear'));
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.subcategory s
+                INNER JOIN dbo.category c ON c.id = s.category_id
+                WHERE c.name = 'footwear' AND s.name = 'slides'
+            )
+                INSERT INTO dbo.subcategory(name, category_id)
+                VALUES ('slides', (SELECT id FROM dbo.category WHERE name = 'footwear'));
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.subcategory s
+                INNER JOIN dbo.category c ON c.id = s.category_id
+                WHERE c.name = 'apparel' AND s.name = 'hoodies'
+            )
+                INSERT INTO dbo.subcategory(name, category_id)
+                VALUES ('hoodies', (SELECT id FROM dbo.category WHERE name = 'apparel'));
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.subcategory s
+                INNER JOIN dbo.category c ON c.id = s.category_id
+                WHERE c.name = 'apparel' AND s.name = 't-shirts'
+            )
+                INSERT INTO dbo.subcategory(name, category_id)
+                VALUES ('t-shirts', (SELECT id FROM dbo.category WHERE name = 'apparel'));
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.subcategory s
+                INNER JOIN dbo.category c ON c.id = s.category_id
+                WHERE c.name = 'apparel' AND s.name = 'joggers'
+            )
+                INSERT INTO dbo.subcategory(name, category_id)
+                VALUES ('joggers', (SELECT id FROM dbo.category WHERE name = 'apparel'));
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.subcategory s
+                INNER JOIN dbo.category c ON c.id = s.category_id
+                WHERE c.name = 'apparel' AND s.name = 'jackets'
+            )
+                INSERT INTO dbo.subcategory(name, category_id)
+                VALUES ('jackets', (SELECT id FROM dbo.category WHERE name = 'apparel'));
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.subcategory s
+                INNER JOIN dbo.category c ON c.id = s.category_id
+                WHERE c.name = 'accessories' AND s.name = 'caps'
+            )
+                INSERT INTO dbo.subcategory(name, category_id)
+                VALUES ('caps', (SELECT id FROM dbo.category WHERE name = 'accessories'));
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.subcategory s
+                INNER JOIN dbo.category c ON c.id = s.category_id
+                WHERE c.name = 'accessories' AND s.name = 'bags'
+            )
+                INSERT INTO dbo.subcategory(name, category_id)
+                VALUES ('bags', (SELECT id FROM dbo.category WHERE name = 'accessories'));
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.subcategory s
+                INNER JOIN dbo.category c ON c.id = s.category_id
+                WHERE c.name = 'accessories' AND s.name = 'socks'
+            )
+                INSERT INTO dbo.subcategory(name, category_id)
+                VALUES ('socks', (SELECT id FROM dbo.category WHERE name = 'accessories'));
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.subcategory s
+                INNER JOIN dbo.category c ON c.id = s.category_id
+                WHERE c.name = 'accessories' AND s.name = 'belts'
+            )
+                INSERT INTO dbo.subcategory(name, category_id)
+                VALUES ('belts', (SELECT id FROM dbo.category WHERE name = 'accessories'));
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.subcategory s
+                INNER JOIN dbo.category c ON c.id = s.category_id
+                WHERE c.name = 'training' AND s.name = 'gym wear'
+            )
+                INSERT INTO dbo.subcategory(name, category_id)
+                VALUES ('gym wear', (SELECT id FROM dbo.category WHERE name = 'training'));
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.subcategory s
+                INNER JOIN dbo.category c ON c.id = s.category_id
+                WHERE c.name = 'training' AND s.name = 'compression'
+            )
+                INSERT INTO dbo.subcategory(name, category_id)
+                VALUES ('compression', (SELECT id FROM dbo.category WHERE name = 'training'));
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.subcategory s
+                INNER JOIN dbo.category c ON c.id = s.category_id
+                WHERE c.name = 'training' AND s.name = 'shorts'
+            )
+                INSERT INTO dbo.subcategory(name, category_id)
+                VALUES ('shorts', (SELECT id FROM dbo.category WHERE name = 'training'));
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.subcategory s
+                INNER JOIN dbo.category c ON c.id = s.category_id
+                WHERE c.name = 'training' AND s.name = 'tracksuits'
+            )
+                INSERT INTO dbo.subcategory(name, category_id)
+                VALUES ('tracksuits', (SELECT id FROM dbo.category WHERE name = 'training'));
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.subcategory s
+                INNER JOIN dbo.category c ON c.id = s.category_id
+                WHERE c.name = 'equipment' AND s.name = 'water bottles'
+            )
+                INSERT INTO dbo.subcategory(name, category_id)
+                VALUES ('water bottles', (SELECT id FROM dbo.category WHERE name = 'equipment'));
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.subcategory s
+                INNER JOIN dbo.category c ON c.id = s.category_id
+                WHERE c.name = 'equipment' AND s.name = 'gloves'
+            )
+                INSERT INTO dbo.subcategory(name, category_id)
+                VALUES ('gloves', (SELECT id FROM dbo.category WHERE name = 'equipment'));
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.subcategory s
+                INNER JOIN dbo.category c ON c.id = s.category_id
+                WHERE c.name = 'equipment' AND s.name = 'resistance bands'
+            )
+                INSERT INTO dbo.subcategory(name, category_id)
+                VALUES ('resistance bands', (SELECT id FROM dbo.category WHERE name = 'equipment'));
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM dbo.subcategory s
+                INNER JOIN dbo.category c ON c.id = s.category_id
+                WHERE c.name = 'equipment' AND s.name = 'yoga mats'
+            )
+                INSERT INTO dbo.subcategory(name, category_id)
+                VALUES ('yoga mats', (SELECT id FROM dbo.category WHERE name = 'equipment'));
+        </sql>
+    </changeSet>
+</databaseChangeLog>

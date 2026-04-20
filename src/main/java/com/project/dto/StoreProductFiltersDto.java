@@ -12,6 +12,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class StoreProductFiltersDto {
+    private Double minPrice;
+    private Double maxPrice;
     private List<String> genders;
     private List<String> brands;
     private List<String> sizes;

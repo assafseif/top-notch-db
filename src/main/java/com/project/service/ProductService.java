@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import java.util.List;
 
 public interface ProductService {
+    void importProductsFromExcel(java.util.List<org.springframework.web.multipart.MultipartFile> files);
     List<Product> getAllProducts();
     Product getProduct(Long id);
     Product createProduct(ProductRequest req);
@@ -23,7 +24,7 @@ public interface ProductService {
     List<ProductDto> getAllProductsWithImages();
     ProductDto getProductWithImages(Long id);
     List<ProductDto> getProductsByCategoryId(Long categoryId);
-    Page<ProductDto> getStoreProducts(Long categoryId, String sortBy, List<String> genders, List<String> brands, List<String> sizes, List<String> colors, List<String> features, int page, int size);
+    Page<ProductDto> getStoreProducts(Long categoryId, String search, String subcategory, String sortBy, Double minPrice, Double maxPrice, List<String> genders, List<String> brands, List<String> sizes, List<String> colors, List<String> features, int page, int size);
     StoreProductFiltersDto getStoreProductFilters(Long categoryId);
     Page<ProductDto> getAdminProducts(Long categoryId, String search, String sortBy, int page, int size);
 

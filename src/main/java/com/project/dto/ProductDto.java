@@ -12,6 +12,7 @@ public class ProductDto {
     private Long id;
     private String name;
     private String barcode;
+    private String itemCode;
     private double price;
     private Double originalPrice;
     private String description;
@@ -36,6 +37,8 @@ public class ProductDto {
     private String imageBase64;
     private List<String> imagesBase64;
     private CategorySummaryDto category;
+    private Long subcategoryId;
+    private String subcategory;
 
 //    private Long categoryId;
 //    private String categoryName;

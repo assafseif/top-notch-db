@@ -8,6 +8,8 @@ import org.springframework.security.core.Authentication;
 public interface OrderService {
     OrderDto create(OrderDto dto);
 
+    OrderDto getByPublicId(String publicId);
+
     Page<OrderDto> getVisibleOrders(Authentication authentication, String type, String status, PageRequest pageRequest);
 
     OrderDto updateStatus(String publicId, String status, Authentication authentication);

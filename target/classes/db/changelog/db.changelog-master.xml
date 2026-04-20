@@ -7,7 +7,8 @@
 
     <include file="db/changelog/schema/001-initial-schema.xml"/>
     <include file="db/changelog/seeder/001-security-seed.xml"/>
-    <include file="db/changelog/seeder/002-product-seed.xml"/>
+    <include file="db/changelog/seeder/002-category-import-reference-seed.xml"/>
+<!--     <include file="db/changelog/seeder/002-product-seed.xml"/>-->
     <include file="db/changelog/seeder/003-home-content-seed.xml"/>
     <include file="db/changelog/schema/004-product-brand-gender.xml"/>
     <include file="db/changelog/schema/005-order-schema.xml"/>
@@ -20,4 +21,8 @@
     <include file="db/changelog/seeder/012-store-configuration-seed.xml"/>
     <include file="db/changelog/schema/013-product-quantity-optional.xml"/>
     <include file="db/changelog/schema/014-product-barcode.xml"/>
+    <include file="db/changelog/schema/015-subcategory-schema.xml"/>
+    <include file="db/changelog/seeder/018-sample-import-reference-seed.xml"/>
+    <include file="db/changelog/seeder/016-rename-clearance-category.xml"/>
+    <include file="db/changelog/schema/017-product-item-code.xml"/>
 </databaseChangeLog>

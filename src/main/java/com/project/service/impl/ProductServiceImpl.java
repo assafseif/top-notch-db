@@ -10,6 +10,7 @@ import com.project.entity.Brand;
 import com.project.entity.Category;
 import com.project.entity.Product;
 import com.project.entity.Image;
+import com.project.entity.Subcategory;
 import com.project.entity.Tag;
 import com.project.entity.Size;
 import com.project.entity.Color;
@@ -20,6 +21,7 @@ import com.project.repository.ImageRepository;
 import com.project.repository.TagRepository;
 import com.project.repository.SizeRepository;
 import com.project.repository.ColorRepository;
+import com.project.repository.SubcategoryRepository;
 import com.project.service.ProductService;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityNotFoundException;
@@ -52,6 +54,346 @@ import java.util.TreeSet;
 
 @Service
 public class ProductServiceImpl implements ProductService {
+    private static final int IMPORT_COL_NAME = 0;
+    private static final int IMPORT_COL_BARCODE = 1;
+    private static final int IMPORT_COL_PRICE = 2;
+    private static final int IMPORT_COL_ORIGINAL_PRICE = 3;
+    private static final int IMPORT_COL_QUANTITY = 4;
+    private static final int IMPORT_COL_CATEGORY = 5;
+    private static final int IMPORT_COL_SUBCATEGORY = 6;
+    private static final int IMPORT_COL_BRAND = 7;
+    private static final int IMPORT_COL_DESCRIPTION = 8;
+    private static final int IMPORT_COL_GENDER = 9;
+    private static final int IMPORT_COL_RATING = 10;
+    private static final int IMPORT_COL_REVIEWS = 11;
+    private static final int IMPORT_COL_SIZES = 12;
+    private static final int IMPORT_COL_COLORS = 13;
+    private static final int IMPORT_COL_TAGS = 14;
+    private static final int IMPORT_COL_IS_NEW = 15;
+    private static final int IMPORT_COL_IS_LIMITED = 16;
+    private static final int IMPORT_COL_IS_BESTSELLER = 17;
+
+    @Override
+    @Transactional
+    public void importProductsFromExcel(java.util.List<org.springframework.web.multipart.MultipartFile> files) {
+        logger.info("importProductsFromExcel - start");
+        if (files == null || files.isEmpty()) {
+            throw new IllegalArgumentException("No files uploaded");
+        }
+        // Find the Excel or CSV file
+        org.springframework.web.multipart.MultipartFile dataFile = files.stream()
+            .filter(f -> f.getOriginalFilename() != null && (f.getOriginalFilename().endsWith(".xlsx") || f.getOriginalFilename().endsWith(".xls") || f.getOriginalFilename().endsWith(".csv")))
+            .findFirst().orElseThrow(() -> new IllegalArgumentException("Excel or CSV file not found in upload"));
+
+        if (dataFile.getOriginalFilename().endsWith(".csv")) {
+            // CSV import using OpenCSV
+            try (var reader = new java.io.InputStreamReader(dataFile.getInputStream());
+                 var csv = new com.opencsv.CSVReader(reader)) {
+                String[] header = csv.readNext();
+                if (header == null) throw new IllegalArgumentException("CSV file is empty");
+                java.util.Map<String, Integer> headerIndexes = buildHeaderIndexes(header);
+                String[] row;
+                int rowCount = 0;
+                int rowNumber = 1;
+                while ((row = csv.readNext()) != null) {
+                    rowNumber++;
+                    if (isCsvRowEmpty(row)) {
+                        continue;
+                    }
+                    ProductRequest req = mapCsvRowToProductRequest(row, headerIndexes);
+                    req = normalizeImportedProductRequest(req);
+                    req = prepareImportedProductRequest(req, "CSV row " + rowNumber);
+                    createProduct(req);
+                    rowCount++;
+                }
+                logger.info("importProductsFromExcel - imported {} products from CSV", rowCount);
+            } catch (Exception e) {
+                logger.error("importProductsFromExcel - CSV error", e);
+                throw propagateImportException(e);
+            } finally {
+                logger.debug("importProductsFromExcel - end");
+            }
+            return;
+        }
+
+        // Excel import (default)
+        try (var inputStream = dataFile.getInputStream();
+             var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook(inputStream)) {
+            var sheet = workbook.getSheetAt(0);
+            java.util.Map<String, Integer> headerIndexes = buildHeaderIndexes(sheet.getRow(0));
+            int rowCount = 0;
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) { // skip header row
+                var row = sheet.getRow(i);
+                if (row == null || isSpreadsheetRowEmpty(row)) continue;
+                ProductRequest req = mapSpreadsheetRowToProductRequest(row, headerIndexes);
+                req = normalizeImportedProductRequest(req);
+                req = prepareImportedProductRequest(req, "Excel row " + (i + 1));
+                createProduct(req);
+                rowCount++;
+            }
+            logger.info("importProductsFromExcel - imported {} products from Excel", rowCount);
+        } catch (Exception e) {
+            logger.error("importProductsFromExcel - Excel error", e);
+            throw propagateImportException(e);
+        } finally {
+            logger.debug("importProductsFromExcel - end");
+        }
+    }
+
+    private RuntimeException propagateImportException(Exception exception) {
+        return exception instanceof RuntimeException runtimeException
+                ? runtimeException
+                : new IllegalStateException(exception.getMessage(), exception);
+    }
+
+    private ProductRequest mapCsvRowToProductRequest(String[] row, java.util.Map<String, Integer> headerIndexes) {
+        ProductRequest req = new ProductRequest();
+        req.setName(getCsv(row, IMPORT_COL_NAME));
+        String barcode = getCsv(row, IMPORT_COL_BARCODE);
+        req.setBarcode(firstNonBlank(
+                getCsv(row, headerIndexes, "barcode"),
+                getCsv(row, headerIndexes, "sku"),
+                barcode));
+        req.setItemCode(firstNonBlank(
+                getCsv(row, headerIndexes, "itemcode", "item_code", "code"),
+                req.getBarcode()));
+        req.setPrice(parseDouble(getCsv(row, IMPORT_COL_PRICE)));
+        req.setOriginalPrice(parseDouble(getCsv(row, IMPORT_COL_ORIGINAL_PRICE)));
+        req.setQuantity(parseInt(getCsv(row, IMPORT_COL_QUANTITY)));
+        req.setCategoryName(getCsv(row, IMPORT_COL_CATEGORY));
+        req.setSubcategoryName(getCsv(row, IMPORT_COL_SUBCATEGORY));
+        req.setBrand(getCsv(row, IMPORT_COL_BRAND));
+        req.setDescription(getCsv(row, IMPORT_COL_DESCRIPTION));
+        req.setGender(getCsv(row, IMPORT_COL_GENDER));
+        req.setRating(parseDouble(getCsv(row, IMPORT_COL_RATING)));
+        req.setReviews(parseInt(getCsv(row, IMPORT_COL_REVIEWS)));
+        req.setSizes(splitCsv(getCsv(row, IMPORT_COL_SIZES)));
+        req.setColors(splitCsv(getCsv(row, IMPORT_COL_COLORS)));
+        req.setTags(splitCsv(getCsv(row, IMPORT_COL_TAGS)));
+        req.setIsNew(parseBoolean(getCsv(row, IMPORT_COL_IS_NEW)));
+        req.setIsLimited(parseBoolean(getCsv(row, IMPORT_COL_IS_LIMITED)));
+        req.setIsBestseller(parseBoolean(getCsv(row, IMPORT_COL_IS_BESTSELLER)));
+        return req;
+    }
+
+    private ProductRequest mapSpreadsheetRowToProductRequest(org.apache.poi.ss.usermodel.Row row, java.util.Map<String, Integer> headerIndexes) {
+        ProductRequest req = new ProductRequest();
+        req.setName(getCellString(row, IMPORT_COL_NAME));
+        String barcode = getCellString(row, IMPORT_COL_BARCODE);
+        req.setBarcode(firstNonBlank(
+                getCellString(row, headerIndexes, "barcode"),
+                getCellString(row, headerIndexes, "sku"),
+                barcode));
+        req.setItemCode(firstNonBlank(
+                getCellString(row, headerIndexes, "itemcode", "item_code", "code"),
+                req.getBarcode()));
+        req.setPrice(getCellDouble(row, IMPORT_COL_PRICE));
+        req.setOriginalPrice(getCellDouble(row, IMPORT_COL_ORIGINAL_PRICE));
+        req.setQuantity((int) getCellDouble(row, IMPORT_COL_QUANTITY));
+        req.setCategoryName(getCellString(row, IMPORT_COL_CATEGORY));
+        req.setSubcategoryName(getCellString(row, IMPORT_COL_SUBCATEGORY));
+        req.setBrand(getCellString(row, IMPORT_COL_BRAND));
+        req.setDescription(getCellString(row, IMPORT_COL_DESCRIPTION));
+        req.setGender(getCellString(row, IMPORT_COL_GENDER));
+        req.setRating(getCellDouble(row, IMPORT_COL_RATING));
+        req.setReviews((int) getCellDouble(row, IMPORT_COL_REVIEWS));
+        req.setSizes(splitCell(row, IMPORT_COL_SIZES));
+        req.setColors(splitCell(row, IMPORT_COL_COLORS));
+        req.setTags(splitCell(row, IMPORT_COL_TAGS));
+        req.setIsNew(getCellBoolean(row, IMPORT_COL_IS_NEW));
+        req.setIsLimited(getCellBoolean(row, IMPORT_COL_IS_LIMITED));
+        req.setIsBestseller(getCellBoolean(row, IMPORT_COL_IS_BESTSELLER));
+        return req;
+    }
+
+    private boolean isCsvRowEmpty(String[] row) {
+        if (row == null || row.length == 0) {
+            return true;
+        }
+
+        for (String value : row) {
+            if (value != null && !value.trim().isEmpty()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private boolean isSpreadsheetRowEmpty(org.apache.poi.ss.usermodel.Row row) {
+        if (row == null) {
+            return true;
+        }
+
+        for (int cellIndex = row.getFirstCellNum(); cellIndex < row.getLastCellNum(); cellIndex++) {
+            if (cellIndex < 0) {
+                continue;
+            }
+
+            String cellValue = getCellString(row, cellIndex);
+            if (cellValue != null && !cellValue.trim().isEmpty()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // CSV helpers
+    private String getCsv(String[] row, int col) {
+        return (col < row.length) ? row[col] : null;
+    }
+    private String getCsv(String[] row, java.util.Map<String, Integer> headerIndexes, String... aliases) {
+        Integer columnIndex = findColumnIndex(headerIndexes, aliases);
+        if (columnIndex == null) {
+            return null;
+        }
+
+        return getCsv(row, columnIndex);
+    }
+
+    private java.util.Map<String, Integer> buildHeaderIndexes(String[] header) {
+        java.util.Map<String, Integer> indexes = new java.util.HashMap<>();
+        if (header == null) {
+            return indexes;
+        }
+
+        for (int columnIndex = 0; columnIndex < header.length; columnIndex++) {
+            String normalizedHeader = normalizeHeaderName(header[columnIndex]);
+            if (!normalizedHeader.isEmpty()) {
+                indexes.putIfAbsent(normalizedHeader, columnIndex);
+            }
+        }
+
+        return indexes;
+    }
+
+    private java.util.Map<String, Integer> buildHeaderIndexes(org.apache.poi.ss.usermodel.Row headerRow) {
+        java.util.Map<String, Integer> indexes = new java.util.HashMap<>();
+        if (headerRow == null) {
+            return indexes;
+        }
+
+        for (int columnIndex = headerRow.getFirstCellNum(); columnIndex < headerRow.getLastCellNum(); columnIndex++) {
+            if (columnIndex < 0) {
+                continue;
+            }
+
+            String normalizedHeader = normalizeHeaderName(getCellString(headerRow, columnIndex));
+            if (!normalizedHeader.isEmpty()) {
+                indexes.putIfAbsent(normalizedHeader, columnIndex);
+            }
+        }
+
+        return indexes;
+    }
+
+    private Integer findColumnIndex(java.util.Map<String, Integer> headerIndexes, String... aliases) {
+        if (headerIndexes == null || headerIndexes.isEmpty() || aliases == null) {
+            return null;
+        }
+
+        for (String alias : aliases) {
+            String normalizedAlias = normalizeHeaderName(alias);
+            if (headerIndexes.containsKey(normalizedAlias)) {
+                return headerIndexes.get(normalizedAlias);
+            }
+        }
+
+        return null;
+    }
+
+    private String normalizeHeaderName(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return value.trim().toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+
+        for (String value : values) {
+            if (value != null && !value.trim().isEmpty()) {
+                return value;
+            }
+        }
+
+        return null;
+    }
+    private Double parseDouble(String s) {
+        try { return s == null ? null : Double.parseDouble(s); } catch (Exception e) { return null; }
+    }
+    private Integer parseInt(String s) {
+        try { return s == null ? null : Integer.parseInt(s); } catch (Exception e) { return null; }
+    }
+    private Boolean parseBoolean(String s) {
+        if (s == null) return null;
+        s = s.trim().toLowerCase();
+        if (s.equals("true")) return true;
+        if (s.equals("false")) return false;
+        return null;
+    }
+    private java.util.List<String> splitCsv(String s) {
+        if (s == null || s.isBlank()) return java.util.Collections.emptyList();
+        String[] parts = s.split("\\|");
+        java.util.List<String> list = new java.util.ArrayList<>();
+        for (String p : parts) {
+            if (!p.trim().isEmpty()) list.add(p.trim());
+        }
+        return list;
+    }
+
+    private String toBase64(org.springframework.web.multipart.MultipartFile file) throws java.io.IOException {
+        return java.util.Base64.getEncoder().encodeToString(file.getBytes());
+    }
+
+    private java.util.List<String> splitCell(org.apache.poi.ss.usermodel.Row row, int col) {
+        String val = getCellString(row, col);
+        if (val == null || val.isBlank()) return java.util.Collections.emptyList();
+        String[] parts = val.split("\\|");
+        java.util.List<String> list = new java.util.ArrayList<>();
+        for (String p : parts) {
+            if (!p.trim().isEmpty()) list.add(p.trim());
+        }
+        return list;
+    }
+
+    private Boolean getCellBoolean(org.apache.poi.ss.usermodel.Row row, int col) {
+        String val = getCellString(row, col);
+        if (val == null) return null;
+        val = val.trim().toLowerCase();
+        if (val.equals("true")) return true;
+        if (val.equals("false")) return false;
+        return null;
+    }
+
+        private String getCellString(org.apache.poi.ss.usermodel.Row row, int col) {
+            var cell = row.getCell(col);
+            return cell != null ? cell.toString().trim() : null;
+        }
+
+        private String getCellString(org.apache.poi.ss.usermodel.Row row, java.util.Map<String, Integer> headerIndexes, String... aliases) {
+            Integer columnIndex = findColumnIndex(headerIndexes, aliases);
+            if (columnIndex == null) {
+                return null;
+            }
+
+            return getCellString(row, columnIndex);
+        }
+
+        private double getCellDouble(org.apache.poi.ss.usermodel.Row row, int col) {
+            var cell = row.getCell(col);
+            if (cell == null) return 0.0;
+            try {
+                return Double.parseDouble(cell.toString().trim());
+            } catch (Exception e) {
+                return 0.0;
+            }
+        }
     private static final Logger logger = LoggerFactory.getLogger(ProductServiceImpl.class);
     private static final String OTHER_FILTER_VALUE = "other";
     private static final List<String> STANDARD_GENDERS = List.of("men", "women", "unisex", "kids");
@@ -82,19 +424,22 @@ public class ProductServiceImpl implements ProductService {
     private ColorRepository colorRepository;
 
     @Autowired
+    private SubcategoryRepository subcategoryRepository;
+
+    @Autowired
     private EntityManagerFactory entityManagerFactory;
 
 
     @Override
     @Transactional(readOnly = true)
     public Page<ProductDto> getAllProductsWithImagesPaged(int page, int size) {
-        return getStoreProducts(null, "newest", null, null, null, null, null, page, size);
+        return getStoreProducts(null, null, null, "newest", null, null, null, null, null, null, null, page, size);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ProductDto> getProductsByCategoryIdPaged(Long categoryId, int page, int size) {
-        return getStoreProducts(categoryId, "newest", null, null, null, null, null, page, size);
+        return getStoreProducts(categoryId, null, null, "newest", null, null, null, null, null, null, null, page, size);
     }
 
     @Override
@@ -135,6 +480,7 @@ public class ProductServiceImpl implements ProductService {
             Product product = new Product();
             product.setName(req.getName());
             product.setBarcode(normalizeNullableText(req.getBarcode()));
+            product.setItemCode(normalizeNullableText(req.getItemCode()));
             product.setPrice(req.getPrice() != null ? req.getPrice() : 0.0);
             product.setOriginalPrice(req.getOriginalPrice());
             product.setDescription(req.getDescription());
@@ -155,24 +501,15 @@ public class ProductServiceImpl implements ProductService {
             // normalize category input: accept req.category (string or object), categoryName or categoryId
             String incomingCategoryName = req.getCategoryName();
             Long incomingCategoryId = req.getCategoryId();
+            Long incomingSubcategoryId = req.getSubcategoryId();
+            String incomingSubcategoryName = req.getSubcategoryName();
 
             // resolve category by id or name
-            Category category = null;
-            if (incomingCategoryId != null) {
-                category = categoryRepository.findById(incomingCategoryId).orElse(null);
-            }
-            if (category == null && incomingCategoryName != null && !incomingCategoryName.isBlank()) {
-                String normalizedCategoryName = normalizeText(incomingCategoryName);
-                category = categoryRepository.findByNameIgnoreCase(normalizedCategoryName).orElse(null);
-                if (category == null) {
-                    requireAuthority("categories.create", "You do not have permission to create categories.");
-                    Category c = new Category();
-                    c.setName(normalizedCategoryName);
-                    category = categoryRepository.save(c);
-                    logger.info("Created new category id={} name={}", category.getId(), category.getName());
-                }
-            }
+            Category category = resolveCategoryEntity(incomingCategoryId, incomingCategoryName);
+            Subcategory subcategory = resolveSubcategoryEntity(incomingSubcategoryId, category, incomingSubcategoryName);
+            category = resolveCategoryForSubcategory(category, subcategory);
             product.setCategory(category);
+            product.setSubcategory(subcategory);
             product.setBrand(resolveBrandEntity(req.getBrand()));
 
             // If client provided base64 images convert all images to Image entities
@@ -219,6 +556,9 @@ public class ProductServiceImpl implements ProductService {
             if (req.getBarcode() != null) {
                 product.setBarcode(normalizeNullableText(req.getBarcode()));
             }
+            if (req.getItemCode() != null) {
+                product.setItemCode(normalizeNullableText(req.getItemCode()));
+            }
             product.setPrice(req.getPrice() != null ? req.getPrice() : product.getPrice());
             product.setOriginalPrice(req.getOriginalPrice() != null ? req.getOriginalPrice() : product.getOriginalPrice());
             product.setDescription(req.getDescription() != null ? req.getDescription() : product.getDescription());
@@ -237,27 +577,20 @@ public class ProductServiceImpl implements ProductService {
             product.setBestseller(req.getIsBestseller() != null ? req.getIsBestseller() : product.isBestseller());
 
             // normalize category input: accept req.category (string or object), categoryName or categoryId
-            String incomingCategoryName = req.getCategoryName();
+                String incomingCategoryName = req.getCategoryName();
             Long incomingCategoryId = req.getCategoryId();
+            Long incomingSubcategoryId = req.getSubcategoryId();
+                String incomingSubcategoryName = req.getSubcategoryName();
 
 
             // resolve category
-            Category category = null;
-            if (incomingCategoryId != null) {
-                category = categoryRepository.findById(incomingCategoryId).orElse(null);
-            }
-            if (category == null && incomingCategoryName != null && !incomingCategoryName.isBlank()) {
-                String normalizedCategoryName = normalizeText(incomingCategoryName);
-                category = categoryRepository.findByNameIgnoreCase(normalizedCategoryName).orElse(null);
-                if (category == null) {
-                    requireAuthority("categories.create", "You do not have permission to create categories.");
-                    Category c = new Category();
-                    c.setName(normalizedCategoryName);
-                    category = categoryRepository.save(c);
-                    logger.info("Created new category id={} name={}", category.getId(), category.getName());
-                }
-            }
+            Category category = resolveCategoryEntity(incomingCategoryId, incomingCategoryName);
+                Subcategory subcategory = incomingSubcategoryId != null || !isBlank(incomingSubcategoryName)
+                    ? resolveSubcategoryEntity(incomingSubcategoryId, category != null ? category : product.getCategory(), incomingSubcategoryName)
+                    : product.getSubcategory();
+            category = resolveCategoryForSubcategory(category, subcategory);
             product.setCategory(category);
+            product.setSubcategory(subcategory);
             if (req.getBrand() != null || product.getBrand() == null) {
                 product.setBrand(resolveBrandEntity(req.getBrand()));
             }
@@ -340,7 +673,7 @@ public class ProductServiceImpl implements ProductService {
     public List<ProductDto> getAllProductsWithImages() {
         logger.info("getAllProductsWithImages - start");
         try {
-            List<ProductDto> dtos = getStoreProducts(null, "newest", null, null, null, null, null, 0, Integer.MAX_VALUE).getContent();
+            List<ProductDto> dtos = getStoreProducts(null, null, null, "newest", null, null, null, null, null, null, null, 0, Integer.MAX_VALUE).getContent();
             logger.info("getAllProductsWithImages - returning {} items", dtos.size());
             return dtos;
         } catch (Exception e) {
@@ -378,7 +711,7 @@ public class ProductServiceImpl implements ProductService {
     public List<com.project.dto.ProductDto> getProductsByCategoryId(Long categoryId) {
         logger.info("getProductsByCategoryId - start categoryId={}", categoryId);
         try {
-            List<ProductDto> dtos = getStoreProducts(categoryId, "newest", null, null, null, null, null, 0, Integer.MAX_VALUE).getContent();
+            List<ProductDto> dtos = getStoreProducts(categoryId, null, null, "newest", null, null, null, null, null, null, null, 0, Integer.MAX_VALUE).getContent();
             logger.info("getProductsByCategoryId - returning {} items for categoryId={}", dtos.size(), categoryId);
             return dtos;
         } catch (Exception e) {
@@ -391,9 +724,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductDto> getStoreProducts(Long categoryId, String sortBy, List<String> genders, List<String> brands, List<String> sizes, List<String> colors, List<String> features, int page, int size) {
-        logger.info("getStoreProducts - start categoryId={} sortBy={} page={} size={}", categoryId, sortBy, page, size);
-        return queryProducts(categoryId, null, sortBy, genders, brands, sizes, colors, features, page, size);
+    public Page<ProductDto> getStoreProducts(Long categoryId, String search, String subcategory, String sortBy, Double minPrice, Double maxPrice, List<String> genders, List<String> brands, List<String> sizes, List<String> colors, List<String> features, int page, int size) {
+        logger.info("getStoreProducts - start categoryId={} search={} subcategory={} sortBy={} page={} size={}", categoryId, search, subcategory, sortBy, page, size);
+        return queryProducts(categoryId, search, subcategory, sortBy, minPrice, maxPrice, genders, brands, sizes, colors, features, page, size);
     }
 
     @Override
@@ -435,6 +768,8 @@ public class ProductServiceImpl implements ProductService {
         }
 
         return new StoreProductFiltersDto(
+            products.stream().map(Product::getPrice).min(Double::compareTo).orElse(0.0),
+            products.stream().map(Product::getPrice).max(Double::compareTo).orElse(0.0),
                 new ArrayList<>(genders),
                 new ArrayList<>(brands),
                 new ArrayList<>(sizes),
@@ -448,13 +783,15 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public Page<ProductDto> getAdminProducts(Long categoryId, String search, String sortBy, int page, int size) {
         logger.info("getAdminProducts - start categoryId={} search={} sortBy={} page={} size={}", categoryId, search, sortBy, page, size);
-        return queryProducts(categoryId, search, sortBy, null, null, null, null, null, page, size);
+        return queryProducts(categoryId, search, null, sortBy, null, null, null, null, null, null, null, page, size);
     }
 
-    private Page<ProductDto> queryProducts(Long categoryId, String search, String sortBy, List<String> genders, List<String> brands, List<String> sizes, List<String> colors, List<String> features, int page, int size) {
+    private Page<ProductDto> queryProducts(Long categoryId, String search, String subcategory, String sortBy, Double minPrice, Double maxPrice, List<String> genders, List<String> brands, List<String> sizes, List<String> colors, List<String> features, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, resolveSort(sortBy));
         Specification<Product> specification = Specification.where(hasCategory(categoryId))
                 .and(matchesSearch(search))
+                .and(matchesSubcategory(subcategory))
+                .and(matchesPriceRange(minPrice, maxPrice))
                 .and(matchesGenderValues(genders))
                 .and(matchesBrandValues(brands))
                 .and(matchesCollectionValues("sizes", "value", sizes))
@@ -489,18 +826,55 @@ public class ProductServiceImpl implements ProductService {
 
             String pattern = "%" + search.trim().toLowerCase(Locale.ROOT) + "%";
             Join<Product, Category> categoryJoin = root.join("category", JoinType.LEFT);
+                Join<Product, Subcategory> subcategoryJoin = root.join("subcategory", JoinType.LEFT);
             Join<Product, Brand> brandJoin = root.join("brand", JoinType.LEFT);
             Join<Product, Tag> tagJoin = root.join("tags", JoinType.LEFT);
             Join<Product, Color> colorJoin = root.join("colors", JoinType.LEFT);
             return criteriaBuilder.or(
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), pattern),
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("barcode")), pattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("itemCode")), pattern),
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), pattern),
                     criteriaBuilder.like(criteriaBuilder.lower(categoryJoin.get("name")), pattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(subcategoryJoin.get("name")), pattern),
                     criteriaBuilder.like(criteriaBuilder.lower(brandJoin.get("name")), pattern),
                     criteriaBuilder.like(criteriaBuilder.lower(tagJoin.get("name")), pattern),
                     criteriaBuilder.like(criteriaBuilder.lower(colorJoin.get("value")), pattern)
             );
+        };
+    }
+
+    private Specification<Product> matchesSubcategory(String subcategory) {
+        return (root, query, criteriaBuilder) -> {
+            if (subcategory == null || subcategory.isBlank()) {
+                return criteriaBuilder.conjunction();
+            }
+
+            Join<Product, Subcategory> subcategoryJoin = root.join("subcategory", JoinType.LEFT);
+            return criteriaBuilder.equal(
+                    criteriaBuilder.lower(subcategoryJoin.get("name")),
+                    subcategory.trim().toLowerCase(Locale.ROOT)
+            );
+        };
+    }
+
+    private Specification<Product> matchesPriceRange(Double minPrice, Double maxPrice) {
+        return (root, query, criteriaBuilder) -> {
+            if (minPrice == null && maxPrice == null) {
+                return criteriaBuilder.conjunction();
+            }
+
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+            if (minPrice != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("price"), minPrice));
+            }
+            if (maxPrice != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("price"), maxPrice));
+            }
+
+            return predicates.size() == 1
+                    ? predicates.get(0)
+                    : criteriaBuilder.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
         };
     }
 
@@ -648,6 +1022,7 @@ public class ProductServiceImpl implements ProductService {
         dto.setId(p.getId());
         dto.setName(p.getName());
         dto.setBarcode(p.getBarcode());
+        dto.setItemCode(p.getItemCode());
         dto.setPrice(p.getPrice());
         dto.setOriginalPrice(p.getOriginalPrice());
         dto.setDescription(p.getDescription());
@@ -706,6 +1081,8 @@ public class ProductServiceImpl implements ProductService {
         }
 
         dto.setCategory(mapCategorySummary(p));
+        dto.setSubcategoryId(mapSubcategoryId(p));
+        dto.setSubcategory(mapSubcategoryName(p));
         return dto;
     }
 
@@ -750,6 +1127,30 @@ public class ProductServiceImpl implements ProductService {
         }
     }
 
+    private Long mapSubcategoryId(Product product) {
+        if (product == null || product.getSubcategory() == null) {
+            return null;
+        }
+
+        Object subcategoryIdentifier = entityManagerFactory
+                .getPersistenceUnitUtil()
+                .getIdentifier(product.getSubcategory());
+        return subcategoryIdentifier instanceof Long ? (Long) subcategoryIdentifier : null;
+    }
+
+    private String mapSubcategoryName(Product product) {
+        if (product == null || product.getSubcategory() == null) {
+            return null;
+        }
+
+        try {
+            return product.getSubcategory().getName();
+        } catch (EntityNotFoundException exception) {
+            logger.warn("Product {} references missing subcategory {}", product.getId(), mapSubcategoryId(product));
+            return null;
+        }
+    }
+
     private void validateProductRequest(ProductRequest req, boolean creating) {
         if (req == null) {
             throw new IllegalArgumentException("Product details are required.");
@@ -778,12 +1179,143 @@ public class ProductServiceImpl implements ProductService {
         if (req.getBarcode() != null && req.getBarcode().trim().isEmpty()) {
             throw new IllegalArgumentException("Product barcode cannot be blank.");
         }
-        if (req.getCategoryId() == null && (req.getCategoryName() == null || req.getCategoryName().trim().isEmpty())) {
-            throw new IllegalArgumentException("Product category is required.");
+        if (req.getItemCode() != null && req.getItemCode().trim().isEmpty()) {
+            throw new IllegalArgumentException("Product item code cannot be blank.");
         }
-        if (creating && (req.getImagesBase64() == null || req.getImagesBase64().isEmpty())) {
-            throw new IllegalArgumentException("At least one product image is required.");
+        if (req.getSubcategoryId() == null && isBlank(req.getSubcategoryName())) {
+            throw new IllegalArgumentException("Product subcategory is required.");
         }
+        if (req.getSubcategoryId() != null && req.getSubcategoryId() <= 0) {
+            throw new IllegalArgumentException("Product subcategory is invalid.");
+        }
+        if (!isBlank(req.getSubcategoryName()) && req.getCategoryId() == null && isBlank(req.getCategoryName())) {
+            throw new IllegalArgumentException("Product category is required when subcategory name is provided.");
+        }
+//        if (creating && (req.getImagesBase64() == null || req.getImagesBase64().isEmpty())) {
+//            throw new IllegalArgumentException("At least one product image is required.");
+//        }
+    }
+
+    private Category resolveCategoryEntity(Long categoryId, String categoryName) {
+        Category category = null;
+        if (categoryId != null) {
+            category = categoryRepository.findById(categoryId).orElse(null);
+        }
+        if (category == null && categoryName != null && !categoryName.isBlank()) {
+            String normalizedCategoryName = normalizeNullableText(categoryName);
+            category = categoryRepository.findByNameIgnoreCase(normalizedCategoryName).orElse(null);
+            if (category == null) {
+                requireAuthority("categories.create", "You do not have permission to create categories.");
+                Category createdCategory = new Category();
+                createdCategory.setName(normalizedCategoryName);
+                category = categoryRepository.save(createdCategory);
+                logger.info("Created new category id={} name={}", category.getId(), category.getName());
+            }
+        }
+        return category;
+    }
+
+    private Category resolveCategoryForSubcategory(Category category, Subcategory subcategory) {
+        if (subcategory == null) {
+            return category;
+        }
+
+        if (subcategory.getCategory() == null || subcategory.getCategory().getId() == null) {
+            throw new IllegalArgumentException("Selected subcategory is missing its parent category.");
+        }
+
+        Long subcategoryCategoryId = subcategory.getCategory().getId();
+        if (category == null) {
+            return subcategory.getCategory();
+        }
+
+        if (!category.getId().equals(subcategoryCategoryId)) {
+            throw new IllegalArgumentException("Selected subcategory does not belong to the selected category.");
+        }
+
+        return category;
+    }
+
+    private Subcategory resolveSubcategoryEntity(Long subcategoryId, Category category, String subcategoryName) {
+        if (subcategoryId != null) {
+            return subcategoryRepository.findById(subcategoryId)
+                    .orElseThrow(() -> new IllegalArgumentException("Subcategory not found."));
+        }
+
+        String normalizedSubcategoryName = normalizeNullableText(subcategoryName);
+        if (normalizedSubcategoryName == null || normalizedSubcategoryName.isBlank()) {
+            return null;
+        }
+
+        if (category == null || category.getId() == null) {
+            throw new IllegalArgumentException("Product category is required when subcategory name is provided.");
+        }
+
+        return subcategoryRepository.findByCategory_IdAndNameIgnoreCase(category.getId(), normalizedSubcategoryName)
+                .orElseGet(() -> {
+                    requireAuthority("categories.create", "You do not have permission to create subcategories.");
+                    Subcategory subcategory = new Subcategory();
+                    subcategory.setName(normalizedSubcategoryName);
+                    subcategory.setCategory(category);
+                    Subcategory savedSubcategory = subcategoryRepository.save(subcategory);
+                    logger.info("Created new subcategory id={} name={} for categoryId={}", savedSubcategory.getId(), savedSubcategory.getName(), category.getId());
+                    return savedSubcategory;
+                });
+    }
+
+    private ProductRequest normalizeImportedProductRequest(ProductRequest request) {
+        request.setName(normalizeLowercaseText(request.getName()));
+        request.setBarcode(normalizeLowercaseText(request.getBarcode()));
+        request.setItemCode(normalizeLowercaseText(request.getItemCode()));
+        request.setCategoryName(normalizeLowercaseText(request.getCategoryName()));
+        request.setSubcategoryName(normalizeLowercaseText(request.getSubcategoryName()));
+        request.setBrand(normalizeLowercaseText(request.getBrand()));
+        request.setDescription(normalizeLowercaseText(request.getDescription()));
+        request.setGender(normalizeLowercaseText(request.getGender()));
+        request.setSizes(normalizeTextList(request.getSizes()));
+        request.setColors(normalizeTextList(request.getColors()));
+        request.setTags(normalizeTextList(request.getTags()));
+        return request;
+    }
+
+    private ProductRequest prepareImportedProductRequest(ProductRequest request, String rowLabel) {
+        String categoryName = normalizeNullableText(request.getCategoryName());
+        if (categoryName == null || categoryName.isBlank()) {
+            throw new IllegalArgumentException(rowLabel + ": category is missing. Expected columns: name, barcode, price, originalPrice, quantity, category, subcategory, brand, description, gender, rating, reviews, sizes, colors, tags, isNew, isLimited, isBestseller, with optional itemCode/code.");
+        }
+
+        Category category = categoryRepository.findByNameIgnoreCase(categoryName)
+                .orElseThrow(() -> new IllegalArgumentException(rowLabel + ": category '" + categoryName + "' is not available in the database."));
+
+        String subcategoryName = normalizeNullableText(request.getSubcategoryName());
+        if (subcategoryName == null || subcategoryName.isBlank()) {
+            throw new IllegalArgumentException(rowLabel + ": subcategory is missing.");
+        }
+
+        Subcategory subcategory = subcategoryRepository.findByCategory_IdAndNameIgnoreCase(category.getId(), subcategoryName)
+                .orElseThrow(() -> new IllegalArgumentException(rowLabel + ": subcategory '" + subcategoryName + "' is not available in the database for category '" + category.getName() + "'."));
+
+        request.setCategoryId(category.getId());
+        request.setCategoryName(category.getName());
+        request.setSubcategoryId(subcategory.getId());
+        request.setSubcategoryName(subcategory.getName());
+        return request;
+    }
+
+    private List<String> normalizeTextList(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> normalizedValues = new ArrayList<>();
+        for (String value : values) {
+            String normalizedValue = normalizeLowercaseText(value);
+            if (normalizedValue != null && !normalizedValue.isBlank()) {
+                normalizedValues.add(normalizedValue);
+            }
+        }
+
+        return normalizedValues;
     }
 
     private String normalizeNullableText(String value) {
@@ -868,6 +1400,11 @@ public class ProductServiceImpl implements ProductService {
 
     private String normalizeText(String value) {
         return value == null ? null : value.trim();
+    }
+
+    private String normalizeLowercaseText(String value) {
+        String normalizedValue = normalizeNullableText(value);
+        return normalizedValue == null ? null : normalizedValue.toLowerCase(Locale.ROOT);
     }
 
     private Brand resolveBrandEntity(String requestedBrand) {

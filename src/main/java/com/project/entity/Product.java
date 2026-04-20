@@ -27,12 +27,20 @@ public class Product {
     @Column(name = "barcode")
     private String barcode;
 
+    @Column(name = "item_code")
+    private String itemCode;
+
     private Integer quantity;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     @ToString.Exclude
     private Category category;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subcategory_id")
+    @ToString.Exclude
+    private Subcategory subcategory;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "brand_id")

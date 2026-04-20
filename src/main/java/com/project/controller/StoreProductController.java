@@ -41,16 +41,20 @@ public class StoreProductController {
     @GetMapping
     public List<ProductDto> getAllStoreProducts(
             @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String subcategory,
             @RequestParam(defaultValue = "newest") String sortBy,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
             @RequestParam(name = "gender", required = false) List<String> genders,
             @RequestParam(name = "brand", required = false) List<String> brands,
             @RequestParam(name = "size", required = false) List<String> sizes,
             @RequestParam(name = "color", required = false) List<String> colors,
             @RequestParam(name = "feature", required = false) List<String> features
     ) {
-        logger.info("GET /api/store/products - start categoryId={} sortBy={}", categoryId, sortBy);
+        logger.info("GET /api/store/products - start categoryId={} search={} subcategory={} sortBy={}", categoryId, search, subcategory, sortBy);
         try {
-            return productService.getStoreProducts(categoryId, sortBy, genders, brands, sizes, colors, features, 0, Integer.MAX_VALUE).getContent();
+            return productService.getStoreProducts(categoryId, search, subcategory, sortBy, minPrice, maxPrice, genders, brands, sizes, colors, features, 0, Integer.MAX_VALUE).getContent();
         } finally {
             logger.debug("GET /api/store/products - end");
         }
@@ -59,7 +63,11 @@ public class StoreProductController {
     @GetMapping("/paged")
     public Page<ProductDto> getStoreProductsPaged(
             @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String subcategory,
             @RequestParam(defaultValue = "newest") String sortBy,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
             @RequestParam(name = "gender", required = false) List<String> genders,
             @RequestParam(name = "brand", required = false) List<String> brands,
             @RequestParam(name = "size", required = false) List<String> sizes,
@@ -69,9 +77,9 @@ public class StoreProductController {
             @RequestParam(name = "pageSize", required = false) Integer pageSize
     ) {
         int resolvedPageSize = storeConfigurationService.resolvePageSize(pageSize);
-        logger.info("GET /api/store/products/paged - start categoryId={} sortBy={} page={} size={}", categoryId, sortBy, page, resolvedPageSize);
+        logger.info("GET /api/store/products/paged - start categoryId={} search={} subcategory={} sortBy={} page={} size={}", categoryId, search, subcategory, sortBy, page, resolvedPageSize);
         try {
-            return productService.getStoreProducts(categoryId, sortBy, genders, brands, sizes, colors, features, page, resolvedPageSize);
+            return productService.getStoreProducts(categoryId, search, subcategory, sortBy, minPrice, maxPrice, genders, brands, sizes, colors, features, page, resolvedPageSize);
         } finally {
             logger.debug("GET /api/store/products/paged - end");
         }

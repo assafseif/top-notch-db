@@ -1,7 +1,9 @@
 package com.project.controller;
 
 import com.project.dto.ApiResponse;
+import com.project.dto.SubcategoryRequest;
 import com.project.entity.Category;
+import com.project.entity.Subcategory;
 import com.project.service.CategoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,6 +72,40 @@ public class CategoryController {
             return ApiResponse.of("Category deleted successfully.");
         } finally {
             logger.debug("DELETE /api/categories/{} - end", id);
+        }
+    }
+
+    @PostMapping("/{categoryId}/subcategories")
+    @PreAuthorize("hasAnyAuthority('categories.create', 'categories.edit')")
+    public ApiResponse<Subcategory> createSubcategory(@PathVariable Long categoryId, @RequestBody SubcategoryRequest request) {
+        logger.info("POST /api/categories/{}/subcategories - start", categoryId);
+        try {
+            return ApiResponse.of("Subcategory created successfully.", categoryService.createSubcategory(categoryId, request));
+        } finally {
+            logger.debug("POST /api/categories/{}/subcategories - end", categoryId);
+        }
+    }
+
+    @PutMapping("/subcategories/{subcategoryId}")
+    @PreAuthorize("hasAuthority('categories.edit')")
+    public ApiResponse<Subcategory> updateSubcategory(@PathVariable Long subcategoryId, @RequestBody SubcategoryRequest request) {
+        logger.info("PUT /api/categories/subcategories/{} - start", subcategoryId);
+        try {
+            return ApiResponse.of("Subcategory updated successfully.", categoryService.updateSubcategory(subcategoryId, request));
+        } finally {
+            logger.debug("PUT /api/categories/subcategories/{} - end", subcategoryId);
+        }
+    }
+
+    @DeleteMapping("/subcategories/{subcategoryId}")
+    @PreAuthorize("hasAuthority('categories.edit')")
+    public ApiResponse<Void> deleteSubcategory(@PathVariable Long subcategoryId) {
+        logger.info("DELETE /api/categories/subcategories/{} - start", subcategoryId);
+        try {
+            categoryService.deleteSubcategory(subcategoryId);
+            return ApiResponse.of("Subcategory deleted successfully.");
+        } finally {
+            logger.debug("DELETE /api/categories/subcategories/{} - end", subcategoryId);
         }
     }
 }

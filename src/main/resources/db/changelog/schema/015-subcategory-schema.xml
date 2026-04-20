@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="015-create-subcategory-table" author="copilot">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="subcategory" schemaName="dbo"/>
+            </not>
+        </preConditions>
+
+        <createTable tableName="subcategory" schemaName="dbo">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_subcategory" nullable="false"/>
+            </column>
+            <column name="name" type="NVARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="category_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint tableName="subcategory"
+                             schemaName="dbo"
+                             columnNames="category_id, name"
+                             constraintName="uk_subcategory_category_name"/>
+
+        <addForeignKeyConstraint baseTableName="subcategory"
+                                 baseTableSchemaName="dbo"
+                                 baseColumnNames="category_id"
+                                 referencedTableName="category"
+                                 referencedTableSchemaName="dbo"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_subcategory_category_id"/>
+    </changeSet>
+
+    <changeSet id="015-add-product-subcategory-column" author="copilot">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="product" schemaName="dbo" columnName="subcategory_id"/>
+            </not>
+        </preConditions>
+
+        <addColumn tableName="product" schemaName="dbo">
+            <column name="subcategory_id" type="BIGINT"/>
+        </addColumn>
+
+        <addForeignKeyConstraint baseTableName="product"
+                                 baseTableSchemaName="dbo"
+                                 baseColumnNames="subcategory_id"
+                                 referencedTableName="subcategory"
+                                 referencedTableSchemaName="dbo"
+                                 referencedColumnNames="id"
+                                 constraintName="fk_product_subcategory_id"/>
+    </changeSet>
+</databaseChangeLog>

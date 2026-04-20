@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="017-add-product-item-code-column" author="copilot">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="product" schemaName="dbo" columnName="item_code"/>
+            </not>
+        </preConditions>
+
+        <addColumn tableName="product" schemaName="dbo">
+            <column name="item_code" type="NVARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
+</databaseChangeLog>
