@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="022-seed-store-configuration-shipping-price" author="copilot">
+        <sql>
+            IF NOT EXISTS (SELECT 1 FROM store_configurations WHERE field_name = 'shipping_price')
+            INSERT INTO store_configurations (field_name, field_value)
+            VALUES ('shipping_price', '0');
+        </sql>
+    </changeSet>
+</databaseChangeLog>

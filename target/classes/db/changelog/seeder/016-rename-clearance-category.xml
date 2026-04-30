@@ -5,13 +5,13 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <changeSet id="016-rename-clearance-category-to-drop-price" author="copilot">
+    <changeSet id="016-rename-clearance-category-to-price-drop" author="copilot">
         <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="1">SELECT COUNT(*) FROM dbo.category WHERE name = 'Clearance'</sqlCheck>
         </preConditions>
 
         <update tableName="category" schemaName="dbo">
-            <column name="name" value="Drop Price"/>
+            <column name="name" value="Price Drop"/>
             <where>name = 'Clearance'</where>
         </update>
     </changeSet>

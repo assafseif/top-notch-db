@@ -12,4 +12,8 @@ import lombok.NoArgsConstructor;
 public class StoreConfigurationDto {
     private String whatsappNumber;
     private Integer defaultPageSize;
+    private Double shippingPrice;
+    private String promoBannerMessage;
+    private String couponCode;
+    private Integer couponDiscountPercentage;
 }

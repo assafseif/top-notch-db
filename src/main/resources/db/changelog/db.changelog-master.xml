@@ -25,4 +25,8 @@
     <include file="db/changelog/seeder/018-sample-import-reference-seed.xml"/>
     <include file="db/changelog/seeder/016-rename-clearance-category.xml"/>
     <include file="db/changelog/schema/017-product-item-code.xml"/>
+    <include file="db/changelog/seeder/019-store-configuration-promo-coupon-seed.xml"/>
+    <include file="db/changelog/seeder/020-rename-drop-price-to-price-drop.xml"/>
+    <include file="db/changelog/schema/021-newsletter-subscription-schema.xml"/>
+    <include file="db/changelog/seeder/022-store-configuration-shipping-price-seed.xml"/>
 </databaseChangeLog>

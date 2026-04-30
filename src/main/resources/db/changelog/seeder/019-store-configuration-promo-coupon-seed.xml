@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="019-seed-store-configuration-promo-coupon" author="copilot">
+        <sql>
+            IF NOT EXISTS (SELECT 1 FROM store_configurations WHERE field_name = 'promo_banner_message')
+            INSERT INTO store_configurations (field_name, field_value)
+            VALUES ('promo_banner_message', 'Free shipping on orders over USD 100.00 - Use COUPON for 10% off');
+        </sql>
+
+        <sql>
+            IF NOT EXISTS (SELECT 1 FROM store_configurations WHERE field_name = 'coupon_code')
+            INSERT INTO store_configurations (field_name, field_value)
+            VALUES ('coupon_code', 'COUPON');
+        </sql>
+
+        <sql>
+            IF NOT EXISTS (SELECT 1 FROM store_configurations WHERE field_name = 'coupon_discount_percentage')
+            INSERT INTO store_configurations (field_name, field_value)
+            VALUES ('coupon_discount_percentage', '10');
+        </sql>
+    </changeSet>
+</databaseChangeLog>
